@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RecAcc 训练向导</title>
+  <style>
+    :root{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #eef2f9;
+      --text: #16202a;
+      --muted: #5d6978;
+      --accent: #0a7a64;
+      --accent-2: #0f8f75;
+      --ok: #1f9d55;
+      --warn: #b26a00;
+      --err: #bd2f2f;
+      --line: #d6deea;
+      --shadow: 0 8px 24px rgba(11, 24, 46, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #080808;
+        --panel: #1a1a1a;
+        --panel-2: #1a1a1a;
+        --text: #e6edf7;
+        --muted: #9dafc2;
+        --accent: #41b39c;
+        --accent-2: #63c8b3;
+        --ok: #64c98a;
+        --warn: #e4b15f;
+        --err: #f07474;
+        --line: #444444;
+        --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(1000px 400px at 100% -10%, rgba(64, 179, 156, 0.18), transparent 55%),
+        radial-gradient(800px 300px at 0% -10%, rgba(15, 143, 117, 0.12), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 17px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel-2), transparent);
+    }
+
+    form {
+      padding: 14px 16px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 9px 10px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 82%);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 620px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .danger {
+      background: linear-gradient(180deg, #d04d4d, #a93030);
+      color: #fff;
+    }
+
+    .danger:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 14px;
+      min-width: 120px;
+      transition: background .2s ease;
+    }
+
+    .primary {
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+      color: #fff;
+    }
+
+    .ghost {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .steps {
+      padding: 8px 14px 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: color-mix(in oklab, var(--panel), var(--panel-2) 35%);
+      position: relative;
+      transition: transform .2s ease, border-color .2s ease;
+    }
+
+    .step.running {
+      border-color: var(--accent);
+      transform: translateX(2px);
+    }
+
+    .step.done { border-color: color-mix(in oklab, var(--ok), var(--line) 55%); }
+    .step.error { border-color: color-mix(in oklab, var(--err), var(--line) 55%); }
+
+    .step .title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .step-log {
+      margin-top: 8px;
+      font-size: 12px;
+      max-height: 90px;
+      overflow: auto;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: color-mix(in oklab, var(--panel-2), black 4%);
+      white-space: pre-wrap;
+      line-height: 1.35;
+      font-family: monospace;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .step.running .dot { background: var(--accent); }
+    .step.done .dot { background: var(--ok); }
+    .step.error .dot { background: var(--err); }
+
+    .logs {
+      padding: 12px 14px 16px;
+      border-top: 1px solid var(--line);
+      background: color-mix(in oklab, var(--panel), black 2%);
+    }
+
+    .logs h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      font-size: 12.5px;
+      max-height: 290px;
+      overflow: auto;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: color-mix(in oklab, var(--panel-2), black 3%);
+    }
+
+    .hint {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h2>训练参数表单</h2>
+      <form id="trainForm">
+        <label>
+          实验模式
+          <select id="mode">
+            <option value="small">small（小样本验证）</option>
+            <option value="multiseed">multiseed（多种子重复）</option>
+          </select>
+        </label>
+
+        <label>
+          模型（逗号分隔）
+          <input id="models" value="MLP,VAE,NCF" />
+        </label>
+
+        <div class="grid2">
+          <label>
+            n_train
+            <input id="nTrain" type="number" min="1" value="12" />
+          </label>
+          <label>
+            n_val
+            <input id="nVal" type="number" min="1" value="64" />
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>
+            utility_epochs
+            <input id="epochs" type="number" min="1" value="1" />
+          </label>
+          <label>
+            mc_iters
+            <input id="mcIters" type="number" min="1" value="4" />
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>
+            lr
+            <input id="lr" type="number" min="0" step="0.0001" value="0.001" />
+          </label>
+          <label>
+            seeds（仅 multiseed）
+            <input id="seeds" value="7,42,99" />
+          </label>
+        </div>
+
+        <div class="row">
+          <button class="primary" type="submit" id="startBtn">开始训练流程</button>
+          <button class="danger hidden" type="button" id="stopBtn" disabled>终止当前运行</button>
+          <button class="ghost" type="button" id="resetBtn">重置状态</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>步骤执行面板</h2>
+      <div class="steps" id="steps"></div>
+      <div class="logs">
+        <h3>运行日志</h3>
+        <pre id="logBox">等待开始...</pre>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const stepDefs = [
+      { key: "s1", title: "Step1 数据与环境初始化" },
+      { key: "s2", title: "Step2 模型训练（输出 step2_training）" },
+      { key: "s3", title: "Step3 价值评估（输出 step3_valuation）" },
+      { key: "s4", title: "Step4 归因对比（输出 step4_attribution_benchmark）" },
+    ];
+
+    const stepsEl = document.getElementById("steps");
+    const logBox = document.getElementById("logBox");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    function setRunningUi(running) {
+      if (running) {
+        startBtn.classList.add("hidden");
+        stopBtn.classList.remove("hidden");
+        stopBtn.disabled = false;
+      } else {
+        startBtn.classList.remove("hidden");
+        stopBtn.classList.add("hidden");
+        stopBtn.disabled = true;
+      }
+    }
+
+    function buildSteps() {
+      stepsEl.innerHTML = "";
+      stepDefs.forEach((s, i) => {
+        const div = document.createElement("div");
+        div.className = "step";
+        div.id = s.key;
+        div.innerHTML = `
+          <div class="title">${i + 1}. ${s.title}</div>
+          <div class="status"><span class="dot"></span><span class="txt">等待中</span></div>
+          <div class="step-log" id="${s.key}-log">等待该步骤开始...</div>
+        `;
+        stepsEl.appendChild(div);
+      });
+    }
+
+    function setStep(key, state, text) {
+      const el = document.getElementById(key);
+      if (!el) return;
+      el.classList.remove("running", "done", "error");
+      if (state) el.classList.add(state);
+      el.querySelector(".txt").textContent = text;
+    }
+
+    function appendLog(line) {
+      const now = new Date().toLocaleTimeString();
+      const prefix = `[${now}] `;
+      logBox.textContent += `\n${prefix}${line}`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function setStepLog(key, text) {
+      const el = document.getElementById(`${key}-log`);
+      if (!el) return;
+      el.textContent = text && text.trim() ? text : "等待该步骤开始...";
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function sleep(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    }
+
+    function parseForm() {
+      const mode = document.getElementById("mode").value;
+      const models = document.getElementById("models").value
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+      const nTrain = Number(document.getElementById("nTrain").value);
+      const nVal = Number(document.getElementById("nVal").value);
+      const epochs = Number(document.getElementById("epochs").value);
+      const mcIters = Number(document.getElementById("mcIters").value);
+      const lr = Number(document.getElementById("lr").value);
+      const seeds = document.getElementById("seeds").value
+        .split(",")
+        .map((x) => Number(x.trim()))
+        .filter((x) => Number.isFinite(x));
+
+      return { mode, models, nTrain, nVal, epochs, mcIters, lr, seeds };
+    }
+
+    let pollTimer = null;
+    let pollAbortController = null;
+
+    function renderFromStatus(status) {
+      const map = status.steps || {};
+      const labelByState = {
+        idle: "等待中",
+        running: "执行中",
+        done: "完成",
+        error: "失败",
+      };
+
+      stepDefs.forEach((s) => {
+        const st = map[s.key] || "idle";
+        setStep(s.key, st === "idle" ? "" : st, labelByState[st] || st);
+      });
+
+      const stepLogs = status.step_logs || {};
+      stepDefs.forEach((s) => {
+        const lines = stepLogs[s.key] || [];
+        const text = Array.isArray(lines) ? lines.join("\n") : String(lines || "");
+        setStepLog(s.key, text);
+      });
+
+      logBox.textContent = status.logs || "等待开始...";
+      logBox.scrollTop = logBox.scrollHeight;
+      setRunningUi(!!status.running);
+    }
+
+    async function fetchStatus(signal) {
+      const res = await fetch("/api/status", { cache: "no-store", signal });
+      if (!res.ok) {
+        throw new Error("获取状态失败");
+      }
+      return res.json();
+    }
+
+    async function startRun(params) {
+      const payload = {
+        mode: params.mode,
+        models: params.models,
+        n_train: params.nTrain,
+        n_val: params.nVal,
+        utility_epochs: params.epochs,
+        mc_iters: params.mcIters,
+        lr: params.lr,
+        seeds: params.seeds,
+        train_epochs: 3,
+        train_lr: params.lr,
+      };
+
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "启动失败");
+      }
+    }
+
+    async function stopRun() {
+      const res = await fetch("/api/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "终止失败");
+      }
+    }
+
+    async function resetRun() {
+      const res = await fetch("/api/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "重置失败");
+      }
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (pollAbortController) {
+        try {
+          pollAbortController.abort();
+        } catch (_) {}
+        pollAbortController = null;
+      }
+    }
+
+    function startPolling() {
+      stopPolling();
+      pollTimer = setInterval(async () => {
+        pollAbortController = new AbortController();
+        try {
+          const status = await fetchStatus(pollAbortController.signal);
+          renderFromStatus(status);
+          if (status.done) {
+            stopPolling();
+            setRunningUi(false);
+            appendLog(status.success ? "流程已结束" : `流程失败: ${status.error || "未知错误"}`);
+          }
+        } catch (err) {
+          if (err && err.name === "AbortError") {
+            return;
+          }
+          stopPolling();
+          setRunningUi(false);
+          appendLog(`轮询中断: ${err.message || String(err)}`);
+        } finally {
+          pollAbortController = null;
+        }
+      }, 1000);
+    }
+
+    document.getElementById("trainForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const params = parseForm();
+      try {
+        logBox.textContent = "开始执行...";
+        buildSteps();
+        await startRun(params);
+        setRunningUi(true);
+        startPolling();
+      } catch (err) {
+        setRunningUi(false);
+        appendLog(`执行失败: ${err.message || String(err)}`);
+        const running = document.querySelector(".step.running");
+        if (running) {
+          running.classList.remove("running");
+          running.classList.add("error");
+          running.querySelector(".txt").textContent = "执行失败";
+        }
+      }
+    });
+
+    stopBtn.addEventListener("click", async () => {
+      stopPolling();
+      stopBtn.disabled = true;
+      try {
+        await stopRun();
+        appendLog("已发送终止请求，已切断状态轮询");
+      } catch (err) {
+        appendLog(`终止失败: ${err.message || String(err)}`);
+      }
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", async () => {
+      try {
+        await resetRun();
+      } catch (err) {
+        appendLog(`重置失败: ${err.message || String(err)}`);
+      }
+      stopPolling();
+      setRunningUi(false);
+      logBox.textContent = "等待开始...";
+      buildSteps();
+    });
+
+    setRunningUi(false);
+    buildSteps();
+  </script>
+</body>
+</html>

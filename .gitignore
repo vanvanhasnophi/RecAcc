@@ -1,0 +1,6 @@
+eleme/processed/test_data.bin
+eleme/processed/processed.npz
+eleme/processed/train_data.bin
+eleme/processed/*
+output/*
+log/*

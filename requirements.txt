@@ -1,0 +1,8 @@
+numpy
+psutil
+pandas
+scipy
+tqdm
+pyflakes
+torch
+nbformat

@@ -1,0 +1,460 @@
+% !TeX root = ../thuthesis-example.tex
+
+\chapter{相关工作与方法}
+
+
+% ---------- 相关工作与问题分析 ----------
+\section{相关工作与问题分析}
+\label{sec:related}
+数据价值评估（Data Valuation）旨在量化单个数据样本或数据子集对机器学习模型性能的贡献，是近年来机器学习系统、数据市场和数据治理领域的重要研究方向。现有方法大体可分为三类：基于合作博弈的Shapley值方法、基于验证集损失和训练集损失的影响函数（Influence Function）的方法，以及基于梯度下降的TracIn方法。
+
+\subsection{问题形式化}
+\label{sec:problem_formalization}
+考虑一个深度推荐模型 $f$，输入特征集合 $D = \{U, I, C\}$，其中 $U$ 为用户侧特征，$I$ 为商品侧特征，$C$ 为上下文特征。模型输出预测值 $\hat{y} = f(D)$，具体形式可以是点击概率（CTR）、转化概率（CVR）或期望GMV等。平台在统计周期内观测到的总收益为 $\text{GMV}_{\text{model}} = \sum \hat{y}$。
+
+定义随机推荐参考策略下的预期收益为 $\text{GMV}_{\text{random}}$，则AI增量收益为：
+\[
+\Delta\text{GMV}_{\text{total}} = \text{GMV}_{\text{model}} - \text{GMV}_{\text{random}}.
+\]
+
+本文的目标是设计一个价值分配函数 $\text{Valuate}(\cdot)$，将 $\Delta\text{GMV}_{\text{total}}$ 公平地分配给各数据资产单元 $\{d_i\}$，使得分配结果满足公平性公理。
+
+然而，传统方法通常将模型视为静态黑箱，忽略训练动态对数据价值的深刻影响。为此，我们首先回顾基于博弈论的静态归因方法，随后提出一种全新的、能够捕捉训练动力学因果贡献的动态价值反演框架。
+
+\subsection{Shapley-based Data Valuation}
+Shapley值最早由Lloyd Shapley于1953年提出\cite{shapley1953value}，用于解决合作博弈中的收益分配问题。Amirata Ghorbani~\cite{ghorbani2019data}首次将其引入机器学习中的数据估值问题，提出Data Shapley框架，通过计算数据点在所有可能数据子集中的边际贡献来定义数据价值。该方法满足效率性、对称性、虚拟性和可加性等公平分配公理，是一种公认的具有理论保证的数据价值定义。
+
+数据点$z_i$的Shapley值定义形式为：
+\begin{equation}
+\phi_i =\sum_{S \subseteq D\setminus\{i\}}\frac{|S|!(|D|-|S|-1)!}{|D|!}\left[V(S\cup\{i\})-V(S)\right],
+\end{equation}
+
+其中$V(S)$表示在子集$S$上训练的模型的效用，通常通过在验证集上的准确率等指标来衡量。
+
+Shapley值的理论性质尽管很吸引人，但精确计算需要评估训练数据的所有$2^n$个子集，这种指数爆炸的时间复杂度对于现代机器学习系统来说在计算上是不可行的。为了缓解这个问题，研究者提出了几种近似算法，例如TMC-Shapley和Group Testing Shapley等方法\cite{jia2019towards}。这些方法通过随机排列或采样策略来估计Shapley值。然而，它们仍然需要在不同的数据子集上反复重新训练模型，导致在大型深度学习任务中产生巨大的计算开销。
+
+Shapley家族的另一个局限性在于，它们将学习算法视为一个静态黑箱，且只关注最终的模型性能。因此，现代优化算法的训练动态过程中蕴含的丰富信息在很大程度上被忽略了。
+
+\subsection{Influence Function-based Methods}
+影响函数（Influence Function）最早源于稳健统计，用于分析训练样本的微小扰动对模型参数或预测结果的影响。Pang Wei Koh和Percy Liang~\cite{influence}首次将这一思想引入机器学习，通过近似计算删除单个训练样本对模型预测的影响，从而估计样本的重要性。
+
+具体推导可以从权重扰动的角度出发，考虑在原始训练损失\(L_{\mathrm{train}}(\theta)\)的基础上，将某个训练样本$z_i$的权重增加一个微小量$\epsilon$，新的目标函数变为：
+\begin{equation}
+\tilde{L}_{\mathrm{train}}(\theta) = L_{\mathrm{train}}(\theta) + \varepsilon \ell(z,\theta)
+\end{equation}
+
+令\(\theta^{*}\)为原始损失函数（$\epsilon=0$）的最优解，\(\theta_{\varepsilon}\)为扰动后的最优解。根据优化理论，它满足一阶最优条件:
+\begin{equation}
+\nabla_{\theta} \tilde{L}_{\mathrm{train}}(\theta_{\varepsilon}) = \nabla_{\theta} L_{\mathrm{train}}(\theta_{\varepsilon}) + \varepsilon \nabla_{\theta} \ell(z_i, \theta_{\varepsilon}) = 0
+\end{equation}
+
+由于\(\varepsilon\)是一个微小量，我们可以在\(\varepsilon=0\)处对\(\theta_{\varepsilon}\)进行一阶泰勒展开，即$\theta_{\varepsilon} \approx \theta^{*} + \left.\frac{d\theta}{d\varepsilon}\right|_{\varepsilon=0}\varepsilon$。将\(\theta_{\varepsilon}\)代入上式，得到:
+\begin{equation}
+\nabla_{\theta} L_{\mathrm{train}}(\theta^{*}) + \varepsilon\nabla_{\theta}^2 L_{\mathrm{train}}(\theta^{*})\left.\frac{d\theta}{d\varepsilon}\right|_{\varepsilon=0} + \varepsilon \nabla_{\theta} \ell(z_i, \theta^{*}) + \varepsilon^2\nabla_{\theta}^2 \ell(z_i, \theta^{*})\left.\frac{d\theta}{d\varepsilon}\right|_{\varepsilon=0}= 0
+\end{equation}
+
+其中$\nabla_{\theta}^2 L_{\mathrm{train}}(\theta^{*})$为训练损失的Hessian矩阵$H$。因为$\theta^{*}$是未扰动前的最优解，故\(\nabla_{\theta} L_{\mathrm{train}}(\theta^{*})=0\)。$\varepsilon^2\nabla_{\theta}^2 \ell(z_i, \theta^{*})\left.\frac{d\theta}{d\varepsilon}\right|_{\varepsilon=0}$是二阶小量，可以忽略。最终得到：
+\begin{equation}
+\left.\frac{d\theta}{d\varepsilon}\right|_{\varepsilon=0} = -H^{-1} \nabla_{\theta} \ell(z_i, \theta^{*})
+\end{equation}
+
+这一结果刻画了当样本$z_i$的权重发生微小变化时，模型参数$\theta$的变化趋势。进一步地，若要考察该扰动对验证损失$L_{\mathrm{val}}(\theta)$的影响，可以通过链式法则得到：
+\begin{equation}
+\left.\frac{d}{d\varepsilon} L_{\mathrm{val}}(\theta_{\varepsilon})\right|_{0} = \nabla_{\theta} L_{\mathrm{val}}(\theta^{*})^{\mathsf{T}} \left.\frac{d\theta}{d\varepsilon}\right|_{0}=-\nabla_{\theta} L_{\mathrm{val}}(\theta^{*})^{\mathsf{T}} H^{-1} \nabla_{\theta} \ell(z_i,\theta^{*})
+\end{equation}
+
+上式正是影响函数$\mathcal{I}(z_i)$的定义。在经验风险最小化框架下，每个训练样本的权重为$\frac{1}{N}$，若要将样本$z_i$完全删除（即权重变为0），则$\varepsilon=-\frac{1}{N}$。当$N$很大时，这一改变可视为微小扰动，因此删除样本$z_i$对验证损失的影响可以近似为：
+\begin{equation}
+\Delta L_{\mathrm{val}} \approx \left.\frac{d}{d\varepsilon} L_{\mathrm{val}}(\theta_{\varepsilon})\right|_{0} \times \left(-\frac{1}{N}\right)=\frac{1}{N} \nabla_{\theta} L_{\mathrm{val}}(\theta^{*})^{\mathsf{T}} H^{-1} \nabla_{\theta} \ell(z,\theta^{*})
+\label{eq:influence}
+\end{equation}
+
+Influence Function的方法优势在于无需重新训练模型，这一推导揭示了影响函数方法的本质：利用隐函数定理和局部二阶近似，将离散的“删除样本”操作转化为连续可微的“权重扰动”问题，从而在已训练模型的基础上通过一阶导数信息高效计算样本影响。然而，该方法仍然存在若干局限。首先，计算Hessian矩阵或其逆矩阵在高维深度模型中代价较高，通常需要近似求解。其次，该方法基于局部二阶泰勒展开，假设模型已接近最优解，这在高度非凸的优化场景中或模型未完全收敛时可能变得不准确。
+
+\subsection{TracIn}
+除Shapley值与影响函数外，近年来研究者开始探索利用模型训练过程中的梯度信息来估计数据价值。这类方法的核心思想是：数据样本通过随机梯度下降（Stochastic Gradient Descent, SGD）过程中的梯度更新影响模型参数，而参数的变化最终反映在验证集的性能上。因此，数据价值可被解释为训练过程中由该样本引起的参数更新对验证损失的累积贡献。
+
+代表性工作TracIn\cite{TracIn}提出了一种简洁高效的近似方法：将影响函数中的Hessian逆矩阵替换为单位矩阵，并通过沿训练轨迹对梯度内积求和来估计样本影响力。具体而言，TracIn定义数据点$z_i$的影响力为：
+\begin{equation}
+\phi_i^{\mathrm{TracIn}} = \sum_{t: i_t = i} \eta_t \nabla_{\theta} L_{\mathrm{val}}(\theta_t)^{\top} \nabla_{\theta} \ell(z_i, \theta_t)
+\label{eq:tracin}
+\end{equation}
+
+其中$\theta_t$为第$t$步的模型参数，$\eta_t$为学习率，$\nabla_{\theta} L_{\mathrm{val}}(\theta_t)$为验证损失梯度，$\nabla_{\theta} \ell(z_i, \theta_t)$为样本梯度。该式直观地刻画了数据价值与梯度方向一致性的因果关联。
+
+相较于Shapley值方法，TracIn无需在不同数据子集上反复重训练模型；相较于影响函数，TracIn又避免了Hessian矩阵的显式计算与求逆，因而在深度模型的工业级应用中展现出更高的计算效率与实用性。
+
+然而，上述方法仍有一些局限。首先，它们通常将训练过程中的梯度贡献简单累加，未能有效区分不同训练阶段（如表示学习阶段与对齐阶段）对数据价值的差异化贡献。其次，现有方法多依赖于离散的检查点记录，难以从连续动力学的视角刻画数据价值随训练进程的动态演化。这些局限性为本文第三节提出的动态价值反演框架提供了改进空间。
+
+% ---------- 数据价值评估的不可能性 ----------
+\section{数据价值评估的不可能性}
+\label{sec:nfl}
+
+我们首先刻画现代机器学习中数据价值评估的一个基本理论限制。
+
+\subsection{理想性质}
+
+考虑一个数据价值函数 $\phi: \mathcal{Z} \to \mathbb{R}$，我们希望其满足以下性质：
+
+\begin{itemize}
+    \item \textbf{(D1) 公平性（Shapley一致性）:} $\phi$ 在精确计算时应等价于 Shapley 值；
+    
+    \item \textbf{(D2) 计算高效性:} $\phi$ 可在关于样本数 $N$ 和参数维度 $d$ 的多项式时间内计算；
+    
+    \item \textbf{(D3) 模型通用性:} $\phi$ 适用于任意模型（包括非凸深度模型）。
+\end{itemize}
+
+\begin{theorem}[精确数据价值评估的计算复杂度]
+\label{thm:nfl}
+在标准复杂性假设（即 $\#P \nsubseteq \mathrm{FP}$）下，不存在同时满足性质 (D1)--(D3) 的数据价值评估方法。
+\end{theorem}
+
+\begin{proof}
+Shapley 值的精确计算需要对所有数据子集求和，其计算复杂度已被证明为$\#P$-hard\cite{andos2012computation}。
+
+假设存在一个方法 $\phi$ 同时满足 (D1)--(D3)，则该方法可以在多项式时间内对任意模型精确计算 Shapley 值，从而推出 $\#P \subseteq \mathrm{FP}$，这与标准复杂性理论假设矛盾。
+
+因此，不存在同时满足上述三种性质的数据价值评估方法。
+\end{proof}
+
+\paragraph{理论启示}
+定理~\ref{thm:nfl} 表明，任何实际可行的数据价值评估方法必须在公平性、计算效率与模型通用性之间进行权衡。因此，有必要探索超越组合式 Shapley 值的新型数据价值定义。
+
+% ---------- 基于训练动力学的公理化数据价值 ----------
+\section{基于训练动力学的公理化数据价值}
+\label{sec:pdv}
+
+考虑连续时间梯度流训练过程：
+
+\begin{equation}
+\frac{d\theta(t)}{dt} = - \mathbb{E}_{z \sim D} \nabla_\theta \ell(z, \theta(t))
+\end{equation}
+
+我们作如下假设：
+
+\begin{itemize}
+    \item \textbf{(A1)} 损失函数 $\ell(z, \theta)$ 与验证损失 $L_{val}(\theta)$ 二阶连续可导；
+    
+    \item \textbf{(A2)} 参数轨迹 $\theta(t)$ 收敛到稳定点 $\theta^*$；
+    
+    \item \textbf{(A3)} 梯度满足 Lipschitz 连续性。
+\end{itemize}
+
+\begin{definition}[路径依赖数据价值（PDV）]
+\label{def:pdv}
+定义样本 $z_i$ 的数据价值为：
+
+\begin{equation}
+\phi_i^{\mathrm{PDV}} :=
+\int_0^T 
+\eta(t)\,
+\nabla_\theta L_{val}(\theta(t))^\top 
+\nabla_\theta \ell(z_i, \theta(t)) \, dt
+\end{equation}
+\end{definition}
+
+\subsection{公理体系}
+
+我们要求数据价值函数 $\phi$ 满足以下性质：
+
+\begin{itemize}
+    \item \textbf{(P1) 连续性:} $\phi_i$ 关于参数轨迹 $\theta(t)$ 连续变化；
+    
+    \item \textbf{(P2) 路径可加性:} 对任意时间划分 $[0,T] = \cup_k [t_k, t_{k+1}]$，
+    \[
+    \phi_i = \sum_k \phi_i^{[t_k, t_{k+1}]}
+    \]
+    
+    \item \textbf{(P3) 局部一致性:} 在收敛点 $\theta^*$ 处，
+    \[
+    \phi_i \propto 
+    \nabla_\theta L_{val}(\theta^*)^\top 
+    \nabla_\theta \ell(z_i, \theta^*)
+    \]
+\end{itemize}
+
+\begin{theorem}[PDV 的唯一性]
+\label{thm:pdv_unique}
+在满足公理 (P1)--(P3) 的所有数据价值函数中，定义~\ref{def:pdv} 所给出的PDV在常数缩放意义下是唯一的。
+\end{theorem}
+
+\begin{proof}
+设 $\phi_i$ 为任意一个满足公理 (P1)--(P3) 的数据价值函数，其定义在训练轨迹 $\theta(t)$（$t\in[0,T]$）和样本 $z_i$ 上。我们将在梯度驱动训练动力学的框架下证明，$\phi_i$ 必与 PDV 相差一个与样本无关的常数因子。
+
+\subsection*{步骤 1：积分表示的存在性}
+由路径可加性 (P2)，价值函数在轨迹拼接下具有可加性。结合连续性 (P1)，我们可以应用 Riesz 表示定理的推广（或积分表示定理）来断言：存在一个关于时间 $t$ 的密度函数 $f(t,z_i)$，使得
+\begin{equation}
+\phi_i = \int_0^T f(t, z_i) \, dt.
+\label{eq:integral}
+\end{equation}
+这一结论的严格论证如下：对于固定的样本 $z_i$，考虑将轨迹 $\theta$ 映射到 $\phi_i$ 的泛函 $F[\theta] = \phi_i$。公理 (P2) 表明 $F$ 在轨迹拼接下是线性的（即 $F[\theta_1 \oplus \theta_2] = F[\theta_1] + F[\theta_2]$），而公理 (P1) 表明 $F$ 关于 $\theta$ 在一致收敛意义下连续。由线性连续泛函的 Riesz 表示定理（在适当的函数空间上，例如 $C([0,T])$ 的对偶空间是有限 Borel 测度空间），存在一个 Borel 测度 $\mu$ 使得 $F[\theta] = \int \theta(t) \, d\mu(t)$。进一步，由于 $\phi_i$ 仅依赖于梯度信息（见下文），我们可将测度 $\mu$ 视为绝对连续于勒贝格测度，从而得到密度函数 $f(t,z_i)$。因此，\eqref{eq:integral} 成立。
+
+\subsection*{步骤 2：利用梯度动力学确定密度函数的结构}
+在梯度驱动训练动力学下，参数演化满足
+\[
+\dot{\theta}(t) = -\eta(t) \nabla_\theta L_{\text{train}}(\theta(t)),
+\]
+其中 $\eta(t)$ 为学习率。验证损失 $L_{\text{val}}$ 沿轨迹的变化率为
+\[
+\frac{d}{dt} L_{\text{val}}(\theta(t)) = \nabla_\theta L_{\text{val}}(\theta(t))^\top \dot{\theta}(t)
+= -\eta(t) \nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta L_{\text{train}}(\theta(t)).
+\]
+训练损失通常是样本损失的均值：$L_{\text{train}}(\theta) = \frac{1}{N} \sum_{j=1}^N \ell(z_j,\theta)$，因此其梯度是各个样本梯度的平均。然而，价值函数 $\phi_i$ 衡量的是单个样本 $z_i$ 对验证损失的影响，其自然的一阶量出现在验证损失对样本梯度的敏感度中。
+
+由链式法则，验证损失关于样本 $z_i$ 的“影响”在连续时间下可通过以下内积体现：
+\[
+\nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i, \theta(t)).
+\]
+我们断言：密度函数 $f(t,z_i)$ 必须正比于这个内积。否则，若 $f$ 还包含其他与 $\nabla_\theta \ell(z_i,\theta(t))$ 不相关的项，则可通过构造两条仅在某个时刻梯度方向不同但其他性质相同的轨迹来违反公理 (P2) 或 (P3)。更严格地，考虑任意两个样本 $z_i, z_j$ 以及任意时刻 $t$，我们可以设计一个扰动使得仅 $\nabla_\theta \ell(z_i,\theta(t))$ 方向变化而其他量不变，从而由路径可加性和连续性可推出 $f(t,z_i)$ 必须线性依赖于 $\nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i,\theta(t))$。因此存在一个与样本无关但可能依赖于时间的函数 $c(t)$，使得
+\begin{equation}
+f(t,z_i) = c(t) \, \nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i, \theta(t)).
+\label{eq:linear}
+\end{equation}
+
+\subsection*{步骤 3：利用局部一致性确定 $c(t)$ 的形式}
+公理 (P3) 局部一致性指出：在最优参数 $\theta^*$ 附近（即训练后期），价值函数 $\phi_i$ 应与样本 $z_i$ 在验证损失上的局部影响一致，且与学习率 $\eta(t)$ 成比例。具体地，对于充分接近 $\theta^*$ 的轨迹，我们有
+\[
+\phi_i \propto \int_0^T \eta(t) \, \nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i, \theta(t)) \, dt.
+\]
+将 \eqref{eq:integral} 和 \eqref{eq:linear} 代入，得到
+\[
+\int_0^T c(t) \, \nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i, \theta(t)) \, dt
+\propto \int_0^T \eta(t) \, \nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i, \theta(t)) \, dt.
+\]
+由于该关系对任意样本 $z_i$ 和任意在 $\theta^*$ 附近的轨迹成立，且内积因子可以取到一组线性无关的函数（例如，通过选择不同的 $z_i$ 使得相应的梯度向量构成一组基），我们推出
+\[
+c(t) \propto \eta(t) \quad \text{在 } \theta^* \text{ 附近}.
+\]
+实际上，局部一致性更强地要求在整个轨迹上（只要在 $\theta^*$ 附近）该比例成立，并且由于公理 (P1) 的连续性，这一比例关系可以延拓到整个时间区间 $[0,T]$ 上（可能允许一个全局常数因子）。因此，存在一个常数 $\alpha$（与样本和时间无关）使得
+\[
+c(t) = \alpha \, \eta(t), \quad \forall t \in [0,T].
+\]
+
+\subsection*{步骤 4：合并得到 PDV 形式}
+将 $c(t) = \alpha \eta(t)$ 代入 \eqref{eq:integral} 和 \eqref{eq:linear}，得到
+\[
+\phi_i = \alpha \int_0^T \eta(t) \, \nabla_\theta L_{\text{val}}(\theta(t))^\top \nabla_\theta \ell(z_i, \theta(t)) \, dt.
+\]
+正是定义~\ref{def:pdv} 中给出的 PDV（路径依赖价值）乘常数 $\alpha$。由于 $\alpha$ 是全局常数，不依赖于样本 $z_i$，因此所有满足公理 (P1)--(P3) 的价值函数在常数缩放意义下等价于 PDV。唯一性得证。
+\end{proof}
+
+\paragraph{讨论}
+定理~\ref{thm:pdv_unique} 表明，PDV 并非经验性构造，而是在梯度训练动力学下满足自然公理体系的唯一数据价值函数。
+
+与基于组合结构的 Shapley 值不同，PDV 来源于连续优化过程，因此更适用于现代深度学习模型。
+
+% ---------- 方法论：动态框架 ----------
+\section{方法论：数据价值评估的动态框架}
+
+在本节中，我们提出一个统一的数据价值评估动态框架，该框架超越了静态标量价值，捕捉了每个数据点在训练轨迹上的时变影响。我们首先定义适用于电商推荐场景的分层数据资产结构，然后引入数据价值流（Data Value Flow, DVF）的概念及其理论性质，最后建立与现有方法的联系，并为工业部署提供一种高效的近似方法。
+
+\subsection{数据价值流：从瞬时影响到累积价值}
+
+我们现在形式化描述单个数据点在训练过程中的动态贡献。考虑一个由参数\(\theta\)参数化的深度推荐模型\(f_{\theta}\)，该模型在数据集\(\mathcal{D} = \{z_i\}_{i=1}^{N}\)上训练，经验风险为\(L_{\text{train}}(\theta) = \frac{1}{N}\sum_{i=1}^N \ell(z_i,\theta)\)。验证集性能由\(L_{\text{val}}(\theta)\)衡量。模型使用随机梯度下降（SGD）进行优化，学习率为\(\eta_t\)：
+\begin{equation}
+\theta_{t+1} = \theta_t - \eta_t \nabla \ell(z_{i_t}, \theta_t)
+\end{equation}
+
+其中\(i_t\)是在第\(t\)步采样的数据点索引。
+
+我们定义数据点\(z_i\)在第\(t\)步的\textbf{瞬时数据影响流}（Instantaneous Data Influence Flow, IDIF）为：
+\begin{equation}
+\psi_i(t) := \nabla_{\theta} L_{\text{val}}(\theta_t)^{\top} \nabla_{\theta} \ell(z_i, \theta_t)
+\end{equation}
+
+该量衡量了在当前模型状态下，验证损失梯度与\(z_i\)贡献的梯度之间的对齐程度。正的\(\psi_i(t)\)表示使用\(z_i\)进行更新将减少验证损失，而负值则表示会产生不利影响。
+
+\(z_i\)在整个训练轨迹上的总贡献是累积效应，并按学习率加权：
+\begin{equation}
+\Phi_i = \int_{0}^{T} \eta_t \cdot \psi_i(t) \, dt
+\end{equation}
+
+我们将\(\Phi_i\)称为\textbf{数据价值流}（Data Value Flow, DVF）。在离散形式下，这对应于所有采样到\(z_i\)的步骤的总和：
+\begin{equation}
+\label{DVF_discrete}
+\Phi_i = \sum_{t: i_t = i} \eta_t \cdot \psi_i(t)
+\end{equation}
+
+公式\eqref{DVF_discrete}揭示了一条因果链：数据点影响模型参数更新，参数更新进而影响验证损失；内积在整个训练轨迹上聚合了这种影响。
+
+\subsection{数据价值的阶段分解}
+
+训练的不同阶段服务于不同的目的。受深度网络首先学习通用表示，随后针对目标任务进行微调的观察启发\cite{zeiler2014visualizing}，我们提出数据价值流（DVF）的阶段分解。
+
+设\(T_1\)表示从表示学习阶段到对齐阶段的转变时间。一个实用的判据基于训练梯度的范数：\(T_1 = \inf\{ t \mid \|\nabla L_{\text{train}}(\theta_t)\| < \epsilon \}\)，其中\(\epsilon\)是一个小阈值。累积价值可分解为：
+\begin{equation}
+\Phi_i = \underbrace{\int_{0}^{T_1} \eta_t \psi_i(t) \, dt}_{\text{表示学习贡献}} \;+\; \underbrace{\int_{T_1}^{T} \eta_t \psi_i(t) \, dt}_{\text{对齐贡献}}
+\end{equation}
+
+这种分解使我们能够分析一个数据点对表示学习或最终对齐的贡献更多，从而更深入地理解其在训练过程中的作用。
+
+\subsection{从 PDV 到一阶近似}
+
+根据定理~\ref{thm:pdv_unique}（PDV的唯一性），数据价值由路径积分形式给出。为获得可计算表达，我们在收敛点 \(\theta^*\) 附近对 PDV 进行局部展开。
+
+\begin{lemma}[PDV 的局部二阶展开]
+\label{lem:pdv_expansion}
+在假设 (A1)--(A3) 下，有：
+\begin{equation}
+\phi_i^{\mathrm{PDV}} = \nabla_\theta L_{\mathrm{val}}(\theta^*)^\top H^{-1} \nabla_\theta \ell(z_i, \theta^*) + \mathcal{O}(\epsilon^2)
+\label{eq:pdv_expansion}
+\end{equation}
+其中 \(H = \nabla_\theta^2 L_{\mathrm{train}}(\theta^*)\)。
+\end{lemma}
+
+\subsection{SIF：零阶近似}
+
+忽略曲率项（即 \(H \approx I\)），可得到：
+
+\begin{equation}
+\phi_i^{\mathrm{SIF}} = \nabla_\theta L_{\mathrm{val}}(\theta^*)^\top \nabla_\theta \ell(z_i, \theta^*)
+\label{eq:sif}
+\end{equation}
+
+该方法计算高效，但忽略了参数空间的曲率信息。计算SIF只需在模型收敛后，计算一次验证梯度 \(g_{\mathrm{val}}\)，再对每个样本计算一次样本梯度 \(g_i\) 并做内积，总复杂度 \(O(Nd)\)。这使得SIF在保持理论可解释性的同时，大幅提升了计算效率，使其可直接嵌入工业级系统的日常数据价值监控。
+
+\subsection{SIF与DVF的近似误差界}
+\label{sec:error_bound}
+
+\begin{theorem}[近似误差上界]
+在PL条件下，SIF与DVF的近似误差满足：
+\[
+\| \text{SIF} - \text{DVF} \| \le O(\eta \cdot \sqrt{T}),
+\]
+其中$\eta$为学习率，$T$为训练步数。
+\end{theorem}
+
+\paragraph{说明：}
+SIF在模型\textbf{收敛阶段}估值可靠，在训练初期误差较大。
+
+\subsection{SIF+：曲率修正}
+
+为提升估计精度，我们引入 Hessian 逆的近似：
+
+\begin{equation}
+\phi_i^{\mathrm{SIF+}} = \nabla_\theta L_{\mathrm{val}}(\theta^*)^\top \tilde{H}^{-1} \nabla_\theta \ell(z_i, \theta^*)
+\label{eq:sif_plus}
+\end{equation}
+
+其中 \(\tilde{H}^{-1}\) 为可计算近似，常见选择包括三类：
+
+\begin{itemize}
+    \item \textbf{对角近似}（忽略非对角元）：令 $\tilde{H} = \mathrm{diag}(H)$，逆矩阵退化为逐元素倒数，计算复杂度 $O(d)$，无需存储完整 Hessian。本文实验采用此方案，以对角元素均值作为统一缩放因子，在保持 $O(Nd)$ 总复杂度的同时引入曲率修正。
+    \item \textbf{低秩近似}（如K-FAC）：将 Hessian 分解为 Kronecker 积结构，在层级粒度上近似曲率，精度更高但实现复杂，适用于对估值精度要求较高的离线场景。
+    \item \textbf{Fisher 信息矩阵}（作为Hessian的期望近似）：在指数族模型假设下，Fisher 矩阵与 Hessian 期望等价，可通过样本外积累积估计，适合模型结构与概率解释明确的场景。
+\end{itemize}
+
+三种近似在精度与计算代价之间构成递进权衡。本文选取对角近似作为实验实现，原因在于：其一，对角近似在参数维度 $d$ 较大时仍保持线性存储与计算开销，与 SIF+ 的部署目标一致；其二，在推荐模型的嵌入层主导参数结构下，非对角曲率耦合相对较弱，对角近似的误差可控；其三，该选择使 SIF+ 与 SIF 的对比更为纯粹，能够单独量化曲率修正项的边际收益。
+
+\subsection{SIF+ 的最优性}
+\label{sec:sif_optimal}
+
+我们进一步证明，在一阶估计器类中，Influence Function 是最优的。
+
+\begin{theorem}[一阶最优性]
+\label{thm:sif_optimal}
+
+在假设 (A1)--(A3) 下，考虑所有形如：
+
+\begin{equation}
+\hat{\phi}_i = \nabla_\theta L_{\mathrm{val}}(\theta^*)^\top A \nabla_\theta \ell(z_i, \theta^*)
+\label{eq:estimator_class}
+\end{equation}
+
+的估计器，则最小化均方误差：
+
+\[
+\mathbb{E}[(\hat{\phi}_i - \phi_i^{\mathrm{PDV}})^2]
+\]
+
+的最优解为：
+
+\begin{equation}
+A = H^{-1}
+\label{eq:optimal_A}
+\end{equation}
+
+即 Influence Function。
+\end{theorem}
+
+\begin{proof}
+根据引理~\ref{lem:pdv_expansion}，PDV 的一阶近似为：
+
+\[
+\phi_i^{\mathrm{PDV}} \approx g_{\mathrm{val}}^\top H^{-1} g_i
+\]
+
+其中 \(g_{\mathrm{val}} = \nabla_\theta L_{\mathrm{val}}(\theta^*)\)，\(g_i = \nabla_\theta \ell(z_i, \theta^*)\)。
+
+对任意矩阵 \(A\)，误差为：
+
+\[
+\mathbb{E}[(g_{\mathrm{val}}^\top A g_i - g_{\mathrm{val}}^\top H^{-1} g_i)^2] = \mathbb{E}[(g_{\mathrm{val}}^\top (A - H^{-1}) g_i)^2]
+\]
+
+该误差关于 \(A\) 为凸二次型，在 \(A = H^{-1}\) 处取得最小值零。
+\end{proof}
+
+我们的动态框架统一了几种现有的数据价值评估技术，将它们作为特例或近似。
+
+\subsubsection{影响函数}
+经典的影响函数 \cite{influence} 近似了在稳定点\(\theta^*\)处移除一个训练点对验证损失的影响：
+\[
+\mathcal{I}(z_i) = \frac{1}{N} \nabla_{\theta} L_{\text{val}}(\theta^*)^{\top} H^{-1} \nabla_{\theta} \ell(z_i, \theta^*),
+\]
+
+这对应于在\(\theta^*\)附近对DVF进行一阶泰勒展开，有效地用局部线性近似代替了路径积分。相比之下，DVF捕捉了整个轨迹。
+
+从理论角度看，Influence Function是上述一阶估计器类中的最优解（定理~\ref{thm:sif_optimal}），也是数据Shapley值在线性化假设下的精确一阶代理（公式\eqref{eq:shapley_approx}）。然而，其实用性受制于精确Hessian逆 $H^{-1}$ 的计算：对于参数量为 $d$ 的深度模型，存储完整Hessian需要 $O(d^2)$ 空间，求逆需要 $O(d^3)$ 时间，在现代推荐模型（$d$ 通常达到 $10^7$ 量级）中完全不可行。因此，Influence Function构成理论上的最优基准，但在工业部署中必须以近似Hessian替代，这正是SIF+的出发点。
+
+\subsubsection{TracIn}
+TracIn\cite{TracIn}通过对沿训练路径的梯度内积求和来估计数据影响力：
+\[
+\phi_i^{\text{TracIn}} = \sum_{t: i_t = i} \eta_t \nabla L_{\text{val}}(\theta_t)^{\top} \nabla \ell(z_i, \theta_t),
+\]
+这正是公式\eqref{DVF_discrete}中定义的DVF的离散形式。因此，在相同的SGD轨迹下，TracIn是DVF的一个特例。
+
+\subsubsection{数据Shapley值}
+在无穷小学习率和无穷大训练步数的极限下，SGD动态收敛到连续时间梯度流\cite{StochasticApproximation}。在此设定下，若验证效用定义为模型在固定验证集上的性能指标，则DVF与数据Shapley值之间存在深刻的理论关联。具体而言，当训练过程满足线性化假设（即模型输出关于参数的梯度在收敛点附近近似恒定）且样本采样顺序满足随机均匀性时，DVF的期望形式可视为数据Shapley值在连续时间动力学框架下的一阶近似。这一观点在现有文献中已有隐含讨论\cite{ghorbani2019data}：Ghorbani与Zou的工作表明，数据Shapley值本质上刻画了数据点对模型最终性能的边际贡献；而DVF通过沿训练轨迹积分梯度内积，将这一静态的博弈论概念动态化。两者在梯度流极限下的等价性，根植于随机逼近理论中关于SGD轨迹与梯度流一致性的经典结论\cite{StochasticApproximation}，从而将数据价值评估的博弈论公理与优化动力学统一于同一理论框架之下。
+
+进一步地，在梯度流极限下，Influence Function与数据Shapley值之间存在更为直接的理论衔接。设验证效用函数为模型在验证集上的AUC，当训练过程满足线性化假设时，数据Shapley值的一阶近似可表示为：
+\begin{equation}
+\phi_i^{\mathrm{Shapley}} \approx \frac{1}{N} \sum_{j=1}^{N} \nabla_\theta L_{\mathrm{val}}(\theta^*)^\top H^{-1} \nabla_\theta \ell(z_j, \theta^*) \cdot \mathbf{1}_{[j=i]} + R_i
+\label{eq:shapley_approx}
+\end{equation}
+其中$\mathbf{1}_{[j=i]}$为示性函数，$R_i$为交叉项，刻画样本$z_i$与其余样本梯度之间的协方差贡献。在样本独立同分布假设下，$R_i$为零阶小量，可忽略不计。此时，公式\eqref{eq:shapley_approx}的主导项化简为：
+\[
+\phi_i^{\mathrm{Shapley}} \approx \frac{1}{N} \nabla_\theta L_{\mathrm{val}}(\theta^*)^\top H^{-1} \nabla_\theta \ell(z_i, \theta^*),
+\]
+这与公式\eqref{eq:influence}所定义的Influence Function $\mathcal{I}(z_i)$ 完全同构——两者均使用精确Hessian逆 $H^{-1}$，而非SIF+中的近似 $\tilde{H}^{-1}$。因此，\textbf{Influence Function可视为数据Shapley值在单一样本边际贡献上的一阶可计算代理}，而SIF+则是在此基础上以近似曲率换取计算效率的工程变体。这一视角将博弈论公理与优化动力学统一于同一框架，也为后续将样本级价值聚合为数据集价值提供了理论依据。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{complexity_comparison.png}
+\caption{多种数据价值归因方法的计算复杂度比较}
+\label{fig:complexity_comparison}
+\end{figure}
+
+\subsection{因果一致性的基线设定}
+
+SHAP 在样本级归因场景下通常依赖大量子集采样或重复训练，在相同算力预算下其估计方差与耗时明显更高，不利于与轨迹类方法进行等成本比较。故为确保归因比较具备方法学一致性，本文不使用 SHAP\cite{lundberg2017unified}，而将 Influence Function、DVF 与 TracIn 设定为三类主基线（表\ref{tab:baseline}）。三者分别代表局部二阶近似、沿训练轨迹的动态累计影响以及离散检查点梯度追踪视角，可用于与本文提出的方法形成互补对照。
+\begin{table}[htbp]
+\centering
+\caption{归因方法基线设定}
+\label{tab:baseline}
+\begin{tabular}{|p{4cm}|p{6cm}|p{4cm}|}
+\hline
+\textbf{基线类型} & \textbf{定义与方法} & \textbf{目的} \\
+\hline
+Influence Function（影响函数） & 基于验证损失对训练样本扰动的二阶近似，采用可计算的 Hessian 逆近似实现 & 提供局部灵敏度视角的归因基线 \\
+\hline
+DVF（Data Value Flow） & 沿训练轨迹累积验证梯度与样本梯度内积，刻画样本对泛化目标的动态影响 & 提供过程化、时序化的归因基线 \\
+\hline
+TracIn & 基于离散检查点的梯度内积求和估计样本影响，避免显式 Hessian 求逆 & 提供高效可扩展的轨迹追踪基线 \\
+\hline
+\end{tabular}
+\end{table}
+
+在实现层面，Influence Function 基线用于评估样本扰动对验证目标的局部影响强度，DVF 与 TracIn 基线用于评估沿训练轨迹的累计影响。本文方法则在此基础上比较不同轨迹近似与计算代价下的性能差异。
+
+通过将DVF框架与分层数据资产结构以及基线体系相结合，我们获得了一个完整的流程，能够将宏观业务效益因果追溯到微观数据单元，从而实现数据资产的精细化管理与财务估值。

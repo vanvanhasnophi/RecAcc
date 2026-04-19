@@ -1,0 +1,34 @@
+% !TeX root = ../thuthesis-example.tex
+
+% 中英文摘要和关键字
+
+\begin{abstract}
+随着数据要素市场的加速建设，推荐系统中的数据资产价值计量已成为数字经济治理的核心难题。深度推荐模型将多源异构行为数据压缩为排序或匹配预测输出，导致系统性能改进与微观数据单元贡献之间的因果链条难以直接追溯，进而引发数据资产"有值难量、可用难价"的管理困境。本文提出一个基于训练动力学的数据价值评估框架，在不依赖重复重训练的前提下实现对数据单元贡献的可计算度量。
+方法上，本文将瞬时数据影响定义为验证损失梯度与样本梯度的内积，并沿随机梯度下降训练轨迹进行学习率加权累积，得到数据价值流（Data Value Flow, DVF），以刻画数据对泛化能力的时变作用；进一步给出训练阶段分解，区分表示学习与目标对齐阶段的差异化贡献。在理论层面，本文证明了DVF在满足连续性、路径可加性与局部一致性三条公理的数据价值函数类中具有唯一性，并阐明其与影响函数、TracIn及数据Shapley值之间的统一关系。在标准收敛假设下，本文推导出闭式代理指标——SGD影响流（SGD Influence Flow, SIF）及其曲率修正版本SIF+，将估值复杂度由轨迹累积形式降至一次验证梯度与样本梯度内积的可部署形式，总计算复杂度仅为$O(Nd)$，相比TracIn与DVF所需的完整轨迹累积（耗时约27.9秒）降低约25倍，SIF仅需约1.1秒即可完成全量样本估值。
+实验上，本文采用统一数据处理与评测协议，以MLP基准模型在MovieLens1M、Yahoo!Music与Pinterest三类公开数据集上完成可复现实证，比较SIF、SIF+、Influence Function、DVF与TracIn在deletion/insertion/NDCG曲线、随机基线校正指标、运行开销及5个随机种子统计检验下的表现。实验结果表明：SIF取得Deletion-AUC $0.0669\pm0.0248$、Insertion-AUC $0.1419\pm0.0334$、NDCG@Ke-AUC $33.75\pm4.42$；SIF+在归因质量上进一步提升，Deletion-AUC达$0.0683\pm0.0209$、Insertion-AUC达$0.1513\pm0.0216$、NDCG@Ke-AUC达$35.43\pm2.80$，标准差更小，稳定性更优；而Influence Function的Deletion-AUC仅为$-0.0091\pm0.0066$，归因效果明显偏弱。Wilcoxon检验与Holm校正结果显示，SIF/SIF+与DVF、TracIn之间差异不显著（$p=1.000$），但SIF/SIF+的运行耗时仅为后两者的约$\frac{1}{25}$，在归因质量与计算成本之间呈现显著更优的折中。本文最后讨论了框架在合规前提下用于数据资产仪表盘的应用潜力，并给出持续更新的后续验证路径。
+
+
+  % 关键词用“英文逗号”分隔，输出时会自动处理为正确的分隔符
+  \thusetup{
+    keywords = {推荐系统,数据资产,数据价值评估,训练动力学,数据价值流（DVF）,SGD影响流（SIF）,TracIn,影响函数,数据Shapley,因果归因基线},
+  }
+\end{abstract}
+
+
+% \begin{abstract*}
+%   An abstract of a dissertation is a summary and extraction of research work and contributions.
+%   Included in an abstract should be description of research topic and research objective, brief introduction to methodology and research process, and summary of conclusion and contributions of the research.
+%   An abstract should be characterized by independence and clarity and carry identical information with the dissertation.
+%   It should be such that the general idea and major contributions of the dissertation are conveyed without reading the dissertation.
+
+%   An abstract should be concise and to the point.
+%   It is a misunderstanding to make an abstract an outline of the dissertation and words “the first chapter”, “the second chapter” and the like should be avoided in the abstract.
+
+%   Keywords are terms used in a dissertation for indexing, reflecting core information of the dissertation.
+%   An abstract may contain a maximum of 5 keywords, with semi-colons used in between to separate one another.
+
+%   % Use comma as separator when inputting
+%   \thusetup{
+%     keywords* = {keyword 1, keyword 2, keyword 3, keyword 4, keyword 5},
+%   }
+% \end{abstract*}
