@@ -6,3 +6,4 @@ tqdm
 pyflakes
 torch
 nbformat
+nbconvert

@@ -1,0 +1,223 @@
+{
+  "user_id": {
+    "26687d59517325f2d2e9921da3113a40d69eef0598d89fea92fa4094830eb00e": "cb99252e",
+    "c9f05d1754eb14421607e37e733db9824b419c2498b0b2f9c283c66a73f5d18a": "03291e8d",
+    "5b6a87c3693e7b301bfaadf9cbe81a54b77b45f9d1f219028a40dc77828a290c": "1c9233cf",
+    "85d2bbaee07d0f06de6a2856bfb3d999ba53b9501c1bb798bd77cd8d06d3947a": "fb9c737b",
+    "c3b7461be1bdc308d362e05b3df4925f2bd613baf638ad921eff8156fb6d495c": "ffcdec92"
+  },
+  "visit_city": {
+    "6": "1679091c",
+    "1": "c4ca4238",
+    "44": "f7177163",
+    "51": "2838023a"
+  },
+  "shop_id": {
+    "b6d841fe60117678a06430ce77de86bc49af3770b5ad774a22b8a14df2461912": "aeda3cfa",
+    "063167b7d5120c432a6878b8bf85eac0a1d13b080572d0114e587513e177dae2": "3f6f0931",
+    "1468714f908a1133993ff84894f983c7bfc1cd582c9398dc4104cc375d96a8b4": "80ce18d8",
+    "97f8458cdb955e6ac377020784abaa6c776cfc4d8f388bce0249b3b9e8354fe4": "36084a6b",
+    "bf6cc544c2c38ffca4bb7c9e89872f276bf7bf49c18c2c342df54d2f96ca87ff": "ad4f7461",
+    "29b86651c5b0f72c5a6539f402a73e37f70f3a9549f6ca329165e341b93c884c": "58cc664b",
+    "77c39791e1badcfcdd2fd76327619b5259f50714ab5b1626084e0041b8ed3e54": "e29e23a1",
+    "dc55ae7b34baba06f06e813957fd40299213dafae49a85bc6cd204a13edaec00": "1f1a7999",
+    "3146bc392ab549943244ef19af9d88cb6e974b5a61b856369f63197288279ca8": "5250480c",
+    "7cb72aa9a6b56394c8e5372ce345994cd851a47cb4f627cb1f1e73c42e96b2ce": "f5ad7694",
+    "3a5b042d5f2dcca38754bbdd188aaaceb247b320dbfd8d878de8bf99f0363cdc": "c5431193",
+    "9185665e92fb34dded4ac4951d46de0e1d9b4930b71f52ff17b850127545ba46": "778ea025",
+    "5f844e6548aae6df0726fa5aac135573f76577c8238d9916756e2c521471f4d4": "73414ff0",
+    "ad2c8473ffe57aebc78f29803615b4745f583e67455a87c7a44a314a344f9446": "e5340981",
+    "ef26dbb06f8626dad48cbd7b90982e0062470779104e919e9d36760b6514c6d4": "42690c03",
+    "9eafc862bc4032739e19b8ed9f2b479909a21178e328e339dc0c22236acd2a6e": "33105682"
+  },
+  "item_id": {
+    "682735bcef88cf7aeb792c8bec83462adb8ebbe88b20850f5a11b716d64c4af4": "09d06320",
+    "7655b3f9d9bfc5fc0b163957e5feec15eb45d160015718634b727f5699e68a56": "caa12a4a",
+    "0e5d00f4cddd4d2c1b063637da80954df1827af8f0027b92407bd024c31e7572": "f9c3b4e7",
+    "3d51ecae8660f3a392007757dcafc87947a7fefdc5960370e379e26757493c87": "c6cb9325",
+    "bd8ed41152072a7967bf57ce7662be7645336f4c068fbf0bebb295942255aee3": "356f0ec5",
+    "da204ec0e2c0e8e225d8e30f3ea7263cc3027c9974ad9e84620b9d7d2b8f0a62": "9ceaf479",
+    "fb1e121a93f3f5909a922fcafe2ff9c8d335a2d386fae12b5e28b9b039391c70": "99801440",
+    "cd1dca5810bf2dcb2c719a977c8446e524adf9aaa5f8bc572531fee7adef543a": "fbe5049d",
+    "a146ef6ab036e1573ad42198419b6596120972a4e1880dd31600ab24d8dfe72c": "80271f7c",
+    "370106234376e36f8aad8da943fd29854750ecc6feb18ed3127149e35891e90d": "bbd9ba4e",
+    "1f6ad8960c62321ea25541d6667ce0caae57f517a3bf6292f9cc58388d7b596d": "209694fa",
+    "f20ed82da4c108646ddfaff1a06a9dcfefbf92bbed10999ceb3a07a005b9e106": "507f738f",
+    "7234ca9d2a345e5bfb758d71f1ac01f9a5af4f2f849c6a5826ee5b83942fe468": "2dc0d9a3",
+    "9b42110d9cd55375b75657defa07fd6dd92bb68badf8662a9e19cdbc6b3b6865": "63b3261a",
+    "da87dd02268bf3f6f5fcaa03fc65a66aab5712ed7676217a891d64810e46253b": "d5c1c58a",
+    "3a58620a8c7d57311d7de529a73267de7bf29493e1011a40a019d0e1fe84e270": "4e9702ab",
+    "951e46c5eda37202a44b36cdec3b636ea49fd90bbd0974cbb05ad9a9a6ea43b8": "fce0c6c0"
+  },
+  "city_id": {
+    "38": "a5771bce",
+    "1": "c4ca4238",
+    "44": "f7177163",
+    "51": "2838023a"
+  },
+  "district_id": {
+    "5362": "32f6c513",
+    "5265": "f127a3f7",
+    "422": "f85454e8",
+    "51": "2838023a",
+    "5262": "04da4aea"
+  },
+  "brand_id": {
+    "0": "cfcd2084",
+    "1085035": "e90bcb24",
+    "1113355": "8b11968c",
+    "444081": "2f8513b8",
+    "1088843": "ce91e9eb",
+    "552664": "61c19d6b",
+    "1130595": "c0ffcc8a",
+    "478663": "40c04ad3",
+    "452982": "290df8b8",
+    "1189195": "2d441f01"
+  },
+  "category_1_id": {
+    "1071": "1b0114c5",
+    "1001": "b8c37e33",
+    "1210": "f7cade80",
+    "1106": "c9f95a0a",
+    "1087": "a26398dc"
+  },
+  "merge_standard_food_id": {
+    "13800": "4fd461cb",
+    "16730": "6d80fca2",
+    "0": "cfcd2084",
+    "3659": "07845cd9",
+    "1710": "5a142a55",
+    "27244": "ba655f12",
+    "2469": "57bafb2c",
+    "6883": "a577dad7",
+    "33590": "960b0b80"
+  },
+  "time_type": {
+    "night": "93a04b06",
+    "lunch": "bba63abc",
+    "tea": "7239ea2b",
+    "dinner": "ad5acdfa"
+  },
+  "weekdays": {
+    "0": "cfcd2084"
+  },
+  "geohash12": {
+    "wts4q8q651qm": "317e40ff",
+    "wtw1kcxch4e5": "ef5c1149",
+    "wm5z22qv1v15": "d6d7d398",
+    "ws0g5ft0fh50": "92c432bc",
+    "wtw3y2qwb8x0": "47b04505"
+  },
+  "gender": {
+    "2": "c81e728d",
+    "1": "c4ca4238"
+  },
+  "is_supervip": {
+    "1": "c4ca4238",
+    "0": "cfcd2084"
+  },
+  "shop_aoi_id": {
+    "B0FFGBBNVA": "a7bde3b1",
+    "B001572YN5": "6047fa91",
+    "B00155ET0J": "994e1867",
+    "B0FFGY0503": "55b8db22",
+    "B0FFF3P4UD": "00478621",
+    "B03018QSY7": "ec06c0a7",
+    "B0FFFFE5YV": "cddf7bc6",
+    "B030105VS4": "647cc2be",
+    "B03010284G": "be7f0871",
+    "B0FFG6P1U6": "823a4ec3",
+    "B0FFG092TP": "d7fa1128"
+  },
+  "shop_geohash_6": {
+    "wtw1kb": "ff19fa10",
+    "wtw1hp": "cfd018dd",
+    "wtw1hn": "87dbda0e",
+    "wm5xpv": "48c1b43c",
+    "wm5z0r": "83ee0323",
+    "ws0fuq": "b17be79e",
+    "ws0g5v": "f98fc2d1",
+    "ws0ghh": "cbd1e82e",
+    "ws0g5f": "49a89512",
+    "ws0fun": "5882c316",
+    "wtw3z6": "f676410d"
+  },
+  "shop_geohash_12": {
+    "wtw1kbue7hy1": "a724e362",
+    "wtw1hp4csdqb": "38df8f59",
+    "wtw1hnv7dy2e": "1da7a848",
+    "wm5xpvgv8h4v": "b7dc588f",
+    "wm5z0rxr97ht": "f996a91d",
+    "wm5z0rxpvykg": "f9d88b23",
+    "ws0fuq70egud": "8ddf0ba3",
+    "ws0g5vnsed3m": "512638b9",
+    "ws0ghh6v86h6": "8ad56a59",
+    "ws0g5fmvbgsk": "1b0f57e1",
+    "ws0funt2mecj": "b055fa87",
+    "wtw3z66dcbpb": "1d60e762"
+  },
+  "shop_aoi_id_list": {
+    "B00157GJNB;B00157GJNB;B00157GJNB;B00157GJNB": "7b762573",
+    "-1;-1": "ea0ba624",
+    "-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1;-1": "0b25dcb6",
+    "B00155MUY9;B00155MUY9;B00155MUY9": "70eebb75"
+  },
+  "shop_geohash6_list": {
+    "wtw1hn;wtw1hn;wtw1hn;wtw1hn": "0564397f",
+    "ws0g58;ws0g5c": "07127161",
+    "ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g5c;ws0g58;ws0g5c": "04c524b5",
+    "wtw3wj;wtw3wj;wtw3wj": "f1e9a706"
+  },
+  "time_type_list": {
+    "lunch;lunch;lunch;lunch": "b7856bcb",
+    "dinner;dinner": "b28097d2",
+    "dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner;dinner": "162c216d",
+    "lunch;lunch;lunch": "3e417185"
+  },
+  "weekdays_list": {
+    "0;0;0;0": "cee29b0b",
+    "0;0": "abe0e51f",
+    "0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0": "60f54447",
+    "0;0;0": "9019d7d6"
+  },
+  "shop_id_list": {
+    "f141b69ef5321545488df50b0bbd4e00a8484ce0ab38a44f831899e01916d709": "6d2da06c",
+    "58ad2fa5cfa8601bfa895e685ab595981d2d285c6b271d93d53c40326153f5cb": "77de051b",
+    "d9209ee5426885e28cccb69fd274bd9a8cd151e1317ac80cd57e89948ab50026": "dfd36917",
+    "4f706c1fe3cce22f9b80e277b02334ce4b7c70fed990d13ca978d179bab0be77": "674e551f",
+    "0a6d9d5b3700f56d6675b2c8dd197d89b8028897389f1fb19770f77020776a75": "f0318ff6"
+  },
+  "item_id_list": {
+    "9509498a179254ec8279b24f2193601f7001094c1e4d6084314762bca4d8c82f": "2860a30a",
+    "bdfcc3be3c7794507eea77a5ee495d7980dcfd93a8f884d7ad925c27e3c7623f": "84e6088b",
+    "1049f616017e23a2bcf7ee675c20bd9279945e4ff11f6d5321a7694a12ec6f6a": "46e0553e",
+    "3132af81198195567fcf5a4fa0c75be5f7fa60a690b03e60b50c13cfb9e478bf": "77ad6c97",
+    "78589e5615062bf875ce78b2c878f818d94abbdaf9f151137c2d262cce1b25fc": "1fb64d8a",
+    "ffccda5712e9e30876ad5bdc86d9037bb3e935bff01f0982cef6860e70dc0d93": "94b6e47c",
+    "aec793f71f90e1c67c62ea99de017164008afdd9775109cde016cdccf3946d0f": "1c6e29f9",
+    "21311a66b7bb6b65457736e85635d205ce3270dfaf55eac46a495f83ede0bae4": "e265d189",
+    "c7cc68c7657c15ce48927733a4090ad2e9005c7dd3c7e7b19775b825987de453": "01dbf99f",
+    "4b022b7ddad29d0143c674d10a7c14f1efc1493e8a692c25d532bf2f3a5131fa": "9735b6c8",
+    "6fb2c9ed9be5c2a1f46670d9b8a1f2d34e016b3013111d1b14b28532ddbd51bd": "c77ebeb7",
+    "82f08694d524600c28f9f035f5be0c2eb2177aeff9a33c8633e0086da2b4cb59": "f6272ed6"
+  },
+  "price_list": {
+    "3.8;2.8;5.8;0.0": "4d2029e5",
+    "59.8;52.5": "77bf7fa6",
+    "60.0;3.98;3.98;4.58;2.98;3.98;2.98;2.98;4.98;3.98;3.98;3.58;3.58;4.98;3.58;52.0;3.58;59.8;52.5": "b5728e39",
+    "53.0;53.0;53.0": "74458a50"
+  },
+  "timediff_list": {
+    "2285;2301;2397;2441": "02fd3056",
+    "100;157": "ae04c549",
+    "31;47;51;55;66;79;91;92;99;100;121;125;137;140;148;167;274;416;473": "c9edc319",
+    "27;84": "361d49ea",
+    "67;71;296": "a8ed1fb9"
+  },
+  "hours_list": {
+    "12;12;12;12": "be82d678",
+    "18;18": "868f05a8",
+    "19;19;19;19;19;19;19;19;19;19;19;19;19;19;19;18;18;18;18": "5bb0af3c",
+    "12;12;12": "78c3dfc0"
+  }
+}

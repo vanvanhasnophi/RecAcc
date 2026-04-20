@@ -1,0 +1,568 @@
+{
+  "columns": [
+    {
+      "col_name": "label",
+      "source": "label",
+      "output_type": "label",
+      "description": "sample label"
+    },
+    {
+      "col_name": "gender",
+      "source": "gender",
+      "output_type": "dense",
+      "description": "dense/numeric feature from gender"
+    },
+    {
+      "col_name": "avg_price",
+      "source": "avg_price",
+      "output_type": "dense",
+      "description": "dense/numeric feature from avg_price"
+    },
+    {
+      "col_name": "is_supervip",
+      "source": "is_supervip",
+      "output_type": "dense",
+      "description": "dense/numeric feature from is_supervip"
+    },
+    {
+      "col_name": "ctr_30",
+      "source": "ctr_30",
+      "output_type": "dense",
+      "description": "dense/numeric feature from ctr_30"
+    },
+    {
+      "col_name": "ord_30",
+      "source": "ord_30",
+      "output_type": "dense",
+      "description": "dense/numeric feature from ord_30"
+    },
+    {
+      "col_name": "total_amt_30",
+      "source": "total_amt_30",
+      "output_type": "dense",
+      "description": "dense/numeric feature from total_amt_30"
+    },
+    {
+      "col_name": "rank_7",
+      "source": "rank_7",
+      "output_type": "dense",
+      "description": "dense/numeric feature from rank_7"
+    },
+    {
+      "col_name": "rank_30",
+      "source": "rank_30",
+      "output_type": "dense",
+      "description": "dense/numeric feature from rank_30"
+    },
+    {
+      "col_name": "rank_90",
+      "source": "rank_90",
+      "output_type": "dense",
+      "description": "dense/numeric feature from rank_90"
+    },
+    {
+      "col_name": "shop_id_list_len",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical",
+      "description": "sequence length for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_uniq",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical",
+      "description": "unique count for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top1_count",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top1 token count for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top2_count",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top2 token count for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top3_count",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top3 token count for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top4_count",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top4 token count for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top5_count",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top5 token count for shop_id_list"
+    },
+    {
+      "col_name": "item_id_list_len",
+      "source": "item_id_list",
+      "output_type": "seq_categorical",
+      "description": "sequence length for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_uniq",
+      "source": "item_id_list",
+      "output_type": "seq_categorical",
+      "description": "unique count for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top1_count",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top1 token count for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top2_count",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top2 token count for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top3_count",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top3 token count for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top4_count",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top4 token count for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top5_count",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top5 token count for item_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_len",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical",
+      "description": "sequence length for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_uniq",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical",
+      "description": "unique count for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top1_count",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top1 token count for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top2_count",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top2 token count for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top3_count",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top3 token count for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top4_count",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top4 token count for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top5_count",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top5 token count for category_1_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_len",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical",
+      "description": "sequence length for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_uniq",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical",
+      "description": "unique count for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top1_count",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top1 token count for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top2_count",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top2 token count for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top3_count",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top3 token count for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top4_count",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top4 token count for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top5_count",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top5 token count for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "brand_id_list_len",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical",
+      "description": "sequence length for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_uniq",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical",
+      "description": "unique count for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top1_count",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top1 token count for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top2_count",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top2 token count for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top3_count",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top3 token count for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top4_count",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top4 token count for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top5_count",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk_count",
+      "description": "top5 token count for brand_id_list"
+    },
+    {
+      "col_name": "price_list",
+      "source": "price_list",
+      "output_type": "dense",
+      "description": "dense/numeric feature from price_list"
+    },
+    {
+      "col_name": "timediff_list",
+      "source": "timediff_list",
+      "output_type": "dense",
+      "description": "dense/numeric feature from timediff_list"
+    },
+    {
+      "col_name": "hours_list",
+      "source": "hours_list",
+      "output_type": "dense",
+      "description": "dense/numeric feature from hours_list"
+    },
+    {
+      "col_name": "times",
+      "source": "times",
+      "output_type": "dense",
+      "description": "dense/numeric feature from times"
+    },
+    {
+      "col_name": "hours",
+      "source": "hours",
+      "output_type": "dense",
+      "description": "dense/numeric feature from hours"
+    },
+    {
+      "col_name": "user_id_hash",
+      "source": "user_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of user_id"
+    },
+    {
+      "col_name": "visit_city_hash",
+      "source": "visit_city",
+      "output_type": "sparse_hash",
+      "description": "stable hash of visit_city"
+    },
+    {
+      "col_name": "shop_id_hash",
+      "source": "shop_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of shop_id"
+    },
+    {
+      "col_name": "item_id_hash",
+      "source": "item_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of item_id"
+    },
+    {
+      "col_name": "city_id_hash",
+      "source": "city_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of city_id"
+    },
+    {
+      "col_name": "district_id_hash",
+      "source": "district_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of district_id"
+    },
+    {
+      "col_name": "shop_aoi_id_hash",
+      "source": "shop_aoi_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of shop_aoi_id"
+    },
+    {
+      "col_name": "shop_geohash_6_hash",
+      "source": "shop_geohash_6",
+      "output_type": "sparse_hash",
+      "description": "stable hash of shop_geohash_6"
+    },
+    {
+      "col_name": "shop_geohash_12_hash",
+      "source": "shop_geohash_12",
+      "output_type": "sparse_hash",
+      "description": "stable hash of shop_geohash_12"
+    },
+    {
+      "col_name": "brand_id_hash",
+      "source": "brand_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of brand_id"
+    },
+    {
+      "col_name": "category_1_id_hash",
+      "source": "category_1_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of category_1_id"
+    },
+    {
+      "col_name": "merge_standard_food_id_hash",
+      "source": "merge_standard_food_id",
+      "output_type": "sparse_hash",
+      "description": "stable hash of merge_standard_food_id"
+    },
+    {
+      "col_name": "shop_id_list_top1_token_hash",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top1 token hash for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top2_token_hash",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top2 token hash for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top3_token_hash",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top3 token hash for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top4_token_hash",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top4 token hash for shop_id_list"
+    },
+    {
+      "col_name": "shop_id_list_top5_token_hash",
+      "source": "shop_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top5 token hash for shop_id_list"
+    },
+    {
+      "col_name": "item_id_list_top1_token_hash",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top1 token hash for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top2_token_hash",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top2 token hash for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top3_token_hash",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top3 token hash for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top4_token_hash",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top4 token hash for item_id_list"
+    },
+    {
+      "col_name": "item_id_list_top5_token_hash",
+      "source": "item_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top5 token hash for item_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top1_token_hash",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top1 token hash for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top2_token_hash",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top2 token hash for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top3_token_hash",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top3 token hash for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top4_token_hash",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top4 token hash for category_1_id_list"
+    },
+    {
+      "col_name": "category_1_id_list_top5_token_hash",
+      "source": "category_1_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top5 token hash for category_1_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top1_token_hash",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top1 token hash for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top2_token_hash",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top2 token hash for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top3_token_hash",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top3 token hash for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top4_token_hash",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top4 token hash for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "merge_standard_food_id_list_top5_token_hash",
+      "source": "merge_standard_food_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top5 token hash for merge_standard_food_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top1_token_hash",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top1 token hash for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top2_token_hash",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top2 token hash for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top3_token_hash",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top3 token hash for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top4_token_hash",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top4 token hash for brand_id_list"
+    },
+    {
+      "col_name": "brand_id_list_top5_token_hash",
+      "source": "brand_id_list",
+      "output_type": "seq_categorical_topk",
+      "description": "top5 token hash for brand_id_list"
+    },
+    {
+      "col_name": "shop_aoi_id_list_hash",
+      "source": "shop_aoi_id_list",
+      "output_type": "sparse_hash",
+      "description": "stable hash of shop_aoi_id_list"
+    },
+    {
+      "col_name": "shop_geohash6_list_hash",
+      "source": "shop_geohash6_list",
+      "output_type": "sparse_hash",
+      "description": "stable hash of shop_geohash6_list"
+    },
+    {
+      "col_name": "time_type_list_hash",
+      "source": "time_type_list",
+      "output_type": "sparse_hash",
+      "description": "stable hash of time_type_list"
+    },
+    {
+      "col_name": "weekdays_list_hash",
+      "source": "weekdays_list",
+      "output_type": "sparse_hash",
+      "description": "stable hash of weekdays_list"
+    },
+    {
+      "col_name": "time_type_hash",
+      "source": "time_type",
+      "output_type": "sparse_hash",
+      "description": "stable hash of time_type"
+    },
+    {
+      "col_name": "weekdays_hash",
+      "source": "weekdays",
+      "output_type": "sparse_hash",
+      "description": "stable hash of weekdays"
+    },
+    {
+      "col_name": "geohash12_hash",
+      "source": "geohash12",
+      "output_type": "sparse_hash",
+      "description": "stable hash of geohash12"
+    }
+  ]
+}
