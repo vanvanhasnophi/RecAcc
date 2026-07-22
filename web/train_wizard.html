@@ -258,6 +258,32 @@
       font-size: 12px;
       color: var(--muted);
     }
+
+    /* notebook preview styles */
+    .notebook {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+    .nb-cell {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      padding: 10px;
+      background: color-mix(in oklab, var(--panel-2), black 2%);
+    }
+    .nb-cell.code pre {
+      margin: 0;
+      background: #0b1220;
+      color: #e6edf7;
+      padding: 10px;
+      border-radius: 6px;
+      overflow: auto;
+      font-family: Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+    .nb-cell.markdown h1, .nb-cell.markdown h2, .nb-cell.markdown h3 {
+      margin: 6px 0;
+    }
   </style>
 </head>
 <body>
@@ -311,6 +337,12 @@
           </label>
         </div>
 
+        <label>
+          Notebook (.ipynb) 上传
+          <input id="notebookFile" type="file" accept=".ipynb,application/json" />
+          <div class="hint">上传并解析 Jupyter Notebook，页面将展示解析内容。</div>
+        </label>
+
         <div class="row">
           <button class="primary" type="submit" id="startBtn">开始训练流程</button>
           <button class="danger hidden" type="button" id="stopBtn" disabled>终止当前运行</button>
@@ -325,6 +357,12 @@
       <div class="logs">
         <h3>运行日志</h3>
         <pre id="logBox">等待开始...</pre>
+      </div>
+      <div class="logs">
+        <h3>Notebook 预览</h3>
+        <div id="notebookViewer">
+          <div class="hint">未加载任何 Notebook，使用左侧表单上传 .ipynb 文件。</div>
+        </div>
       </div>
     </section>
   </div>
@@ -353,6 +391,110 @@
         stopBtn.disabled = true;
       }
     }
+
+    /* Notebook parsing & rendering */
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function markdownToHtml(md) {
+      // Very small, naive markdown -> html converter for common patterns
+      let out = md.replace(/&/g, '&amp;');
+      out = out.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // code fences
+      out = out.replace(/```([\s\S]*?)```/g, (m, p1) => `<pre><code>${escapeHtml(p1)}</code></pre>`);
+      // headings
+      out = out.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+      out = out.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+      out = out.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+      out = out.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      out = out.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      out = out.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      // inline code
+      out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // bold/italic
+      out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      out = out.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      // paragraphs
+      out = out.replace(/^(?!<h|<pre|<ul|<ol|<blockquote)(.+)$/gim, '<p>$1</p>');
+      return out;
+    }
+
+    function renderNotebook(nb) {
+      const viewer = document.getElementById('notebookViewer');
+      viewer.innerHTML = '';
+      if (!nb || !Array.isArray(nb.cells)) {
+        viewer.innerHTML = '<div class="hint">无法识别的 Notebook 格式。</div>';
+        return;
+      }
+      const container = document.createElement('div');
+      container.className = 'notebook';
+      nb.cells.forEach((cell, idx) => {
+        const cellEl = document.createElement('div');
+        const src = Array.isArray(cell.source) ? cell.source.join('') : (cell.source || '');
+        if (cell.cell_type === 'markdown') {
+          cellEl.className = 'nb-cell markdown';
+          cellEl.innerHTML = markdownToHtml(src);
+        } else if (cell.cell_type === 'code') {
+          cellEl.className = 'nb-cell code';
+          const pre = document.createElement('pre');
+          const code = document.createElement('code');
+          code.textContent = src;
+          pre.appendChild(code);
+          cellEl.appendChild(pre);
+
+          // render outputs (text/plain)
+          if (Array.isArray(cell.outputs) && cell.outputs.length) {
+            cell.outputs.forEach((out) => {
+              if (out.text) {
+                const o = document.createElement('pre');
+                o.textContent = Array.isArray(out.text) ? out.text.join('') : out.text;
+                o.style.marginTop = '8px';
+                cellEl.appendChild(o);
+              } else if (out.data && out.data['text/plain']) {
+                const o = document.createElement('pre');
+                o.textContent = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join('') : out.data['text/plain'];
+                o.style.marginTop = '8px';
+                cellEl.appendChild(o);
+              }
+            });
+          }
+        } else {
+          cellEl.className = 'nb-cell';
+          cellEl.textContent = src;
+        }
+        container.appendChild(cellEl);
+      });
+      viewer.appendChild(container);
+    }
+
+    function parseNotebookFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const nb = JSON.parse(reader.result);
+          renderNotebook(nb);
+          appendLog(`已解析 Notebook: ${file.name}`);
+        } catch (err) {
+          appendLog(`解析 Notebook 失败: ${err.message}`);
+          const viewer = document.getElementById('notebookViewer');
+          viewer.innerHTML = '<div class="hint">解析失败，非有效 JSON 或 .ipynb 文件。</div>';
+        }
+      };
+      reader.onerror = () => {
+        appendLog('读取 Notebook 文件失败');
+      };
+      reader.readAsText(file);
+    }
+
+    document.getElementById('notebookFile').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) parseNotebookFile(f);
+    });
 
     function buildSteps() {
       stepsEl.innerHTML = "";
