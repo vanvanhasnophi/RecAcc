@@ -4,3 +4,4 @@ eleme/processed/train_data.bin
 eleme/processed/*
 output/*
 log/*
+SPINRec/*

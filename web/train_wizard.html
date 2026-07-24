@@ -1,732 +1,537 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-dark="true">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RecAcc 训练向导</title>
-  <style>
-    :root{
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    }
-    :root {
-      color-scheme: light dark;
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --panel-2: #eef2f9;
-      --text: #16202a;
-      --muted: #5d6978;
-      --accent: #0a7a64;
-      --accent-2: #0f8f75;
-      --ok: #1f9d55;
-      --warn: #b26a00;
-      --err: #bd2f2f;
-      --line: #d6deea;
-      --shadow: 0 8px 24px rgba(11, 24, 46, 0.08);
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RecAcc — 训练与归因面板</title>
+<style>
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Consolas', 'SF Mono', 'Menlo', 'Monaco', monospace;
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #080808;
-        --panel: #1a1a1a;
-        --panel-2: #1a1a1a;
-        --text: #e6edf7;
-        --muted: #9dafc2;
-        --accent: #41b39c;
-        --accent-2: #63c8b3;
-        --ok: #64c98a;
-        --warn: #e4b15f;
-        --err: #f07474;
-        --line: #444444;
-        --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-      }
-    }
+  --accent: #2ea35f; --accent-dark: #24804a; --accent-contrast: #fff;
+  --featured: #ffd700; --warning: #ff4d50; --error: #d9534f; --success: #5cb85c;
 
-    * { box-sizing: border-box; }
+  --bg-primary: #141414; --bg-secondary: #1e1e1e;
+  --surface: #222222; --surface-alt: #2a2a2a;
+  --surface-blur: rgba(34, 34, 34, 0.9);
+  --surface-hover: rgba(255, 255, 255, 0.08);
 
-    body {
-      margin: 0;
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background:
-        radial-gradient(1000px 400px at 100% -10%, rgba(64, 179, 156, 0.18), transparent 55%),
-        radial-gradient(800px 300px at 0% -10%, rgba(15, 143, 117, 0.12), transparent 50%),
-        var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 24px;
-    }
+  --text-primary: #e0e0e0; --text-secondary: #a9a9a9;
+  --border: rgba(169, 169, 169, 0.2);
+  --border-blur: rgba(113, 113, 113, 0.2);
 
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 16px;
-    }
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-pill: 9999px;
+  --shadow-1: 0 4px 12px rgba(0,0,0,.3); --shadow-3: 0 10px 30px rgba(0,0,0,.5);
+}
 
-    @media (max-width: 900px) {
-      .wrap { grid-template-columns: 1fr; }
-    }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
+body {
+  background: var(--bg-primary); color: var(--text-primary);
+  min-height: 100vh; font-size: 14px; line-height: 1.5;
+}
 
-    .card h2 {
-      margin: 0;
-      padding: 14px 16px;
-      font-size: 17px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, var(--panel-2), transparent);
-    }
+/* ====== Layout ====== */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 280px; flex-shrink: 0; background: var(--surface-blur); backdrop-filter: blur(16px); border-right: 1px solid var(--border-blur); padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+.main { flex: 1; padding: 24px 32px; overflow-y: auto; max-height: 100vh; }
 
-    form {
-      padding: 14px 16px 16px;
-      display: grid;
-      gap: 10px;
-    }
+.logo { font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+.logo span { color: var(--text-secondary); font-weight: 400; font-size: 13px; }
 
-    .grid2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+/* ====== Sidebar Nav ====== */
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav-item { padding: 10px 14px; border-radius: var(--radius-md); cursor: pointer; transition: all .15s ease; color: var(--text-secondary); font-size: 13.5px; display: flex; align-items: center; gap: 10px; border: 1px solid transparent; }
+.nav-item:hover { background: var(--surface-hover); color: var(--text-primary); }
+.nav-item.active { background: var(--surface-alt); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.nav-num { width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--surface-alt); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.nav-item.active .nav-num { background: var(--accent); color: var(--accent-contrast); }
+.nav-badge { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-pill); }
+.nav-badge.done { background: rgba(92,184,92,.2); color: var(--success); }
+.nav-badge.running { background: rgba(46,163,95,.2); color: var(--accent); animation: pulse 1.5s infinite; }
+.nav-badge.error { background: rgba(217,83,79,.2); color: var(--error); }
 
-    label {
-      display: grid;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--muted);
-    }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
-    input, select {
-      width: 100%;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      color: var(--text);
-      border-radius: 9px;
-      padding: 9px 10px;
-      font-size: 14px;
-      outline: none;
-    }
+/* ====== Timing Panel ====== */
+.timing { margin-top: auto; padding: 12px; border-radius: var(--radius-md); background: var(--surface); border: 1px solid var(--border); }
+.timing h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px; }
+.timing-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+.timing-row .val { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.timing-total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 4px; font-weight: 600; }
 
-    input:focus, select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent), transparent 82%);
-    }
+/* ====== Main Panels ====== */
+.section { display: none; }
+.section.active { display: block; animation: f-in .2s ease; }
+@keyframes f-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
 
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-    }
+.glass { background: var(--surface-blur); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-blur); border-radius: var(--radius-lg); padding: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px; }
+.card h3 { font-size: 15px; margin-bottom: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
 
-    @media (max-width: 620px) {
-      .row {
-        grid-template-columns: 1fr;
-      }
-    }
+/* ====== Forms ====== */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+@media (max-width: 900px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
 
-    .danger {
-      background: linear-gradient(180deg, #d04d4d, #a93030);
-      color: #fff;
-    }
+label { display: grid; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+input, select { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font: inherit; font-size: 13px; outline: none; width: 100%; }
+input:focus, select:focus { border-color: var(--accent); }
 
-    .danger:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius-md); border: 1px solid transparent; font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; transition: all .15s ease; }
+.btn-primary { background: var(--accent); color: var(--accent-contrast); }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--text-primary); }
+.btn-ghost:hover { border-color: var(--accent); }
+.btn-danger { background: var(--error); color: #fff; }
+.btn-danger:hover { opacity: .85; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
 
-    .hidden {
-      display: none !important;
-    }
+/* ====== Logs & Code ====== */
+.log-panel { max-height: 360px; overflow: auto; background: var(--bg-primary); border-radius: var(--radius-md); padding: 12px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.45; white-space: pre-wrap; border: 1px solid var(--border); }
+.log-panel .ts { color: var(--text-secondary); user-select: none; }
+.log-panel .err { color: var(--error); }
 
-    button {
-      border: 0;
-      border-radius: 10px;
-      cursor: pointer;
-      padding: 10px 14px;
-      font-weight: 600;
-      font-size: 14px;
-      min-width: 120px;
-      transition: background .2s ease;
-    }
+/* ====== Stats ====== */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.stat { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 12px 14px; text-align: center; border: 1px solid var(--border); }
+.stat .val { font-size: 22px; font-weight: 700; color: var(--accent); }
+.stat .lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 
-    .primary {
-      background: linear-gradient(180deg, var(--accent-2), var(--accent));
-      color: #fff;
-    }
+/* ====== Table ====== */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+td { padding: 7px 10px; border-bottom: 1px solid rgba(169,169,169,.1); }
+tr:hover td { background: var(--surface-hover); }
 
-    .ghost {
-      background: var(--panel-2);
-      color: var(--text);
-      border: 1px solid var(--line);
-    }
-
-    .steps {
-      padding: 8px 14px 14px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .step {
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: color-mix(in oklab, var(--panel), var(--panel-2) 35%);
-      position: relative;
-      transition: transform .2s ease, border-color .2s ease;
-    }
-
-    .step.running {
-      border-color: var(--accent);
-      transform: translateX(2px);
-    }
-
-    .step.done { border-color: color-mix(in oklab, var(--ok), var(--line) 55%); }
-    .step.error { border-color: color-mix(in oklab, var(--err), var(--line) 55%); }
-
-    .step .title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
-
-    .step-log {
-      margin-top: 8px;
-      font-size: 12px;
-      max-height: 90px;
-      overflow: auto;
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: color-mix(in oklab, var(--panel-2), black 4%);
-      white-space: pre-wrap;
-      line-height: 1.35;
-      font-family: monospace;
-    }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--line);
-    }
-
-    .step.running .dot { background: var(--accent); }
-    .step.done .dot { background: var(--ok); }
-    .step.error .dot { background: var(--err); }
-
-    .logs {
-      padding: 12px 14px 16px;
-      border-top: 1px solid var(--line);
-      background: color-mix(in oklab, var(--panel), black 2%);
-    }
-
-    .logs h3 {
-      margin: 0 0 8px;
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    pre {
-      margin: 0;
-      white-space: pre-wrap;
-      line-height: 1.45;
-      font-size: 12.5px;
-      max-height: 290px;
-      overflow: auto;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      background: color-mix(in oklab, var(--panel-2), black 3%);
-    }
-
-    .hint {
-      margin-top: 4px;
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    /* notebook preview styles */
-    .notebook {
-      padding: 12px;
-      display: grid;
-      gap: 12px;
-    }
-    .nb-cell {
-      border-radius: 8px;
-      border: 1px solid var(--line);
-      padding: 10px;
-      background: color-mix(in oklab, var(--panel-2), black 2%);
-    }
-    .nb-cell.code pre {
-      margin: 0;
-      background: #0b1220;
-      color: #e6edf7;
-      padding: 10px;
-      border-radius: 6px;
-      overflow: auto;
-      font-family: Menlo, Consolas, monospace;
-      font-size: 13px;
-    }
-    .nb-cell.markdown h1, .nb-cell.markdown h2, .nb-cell.markdown h3 {
-      margin: 6px 0;
-    }
-  </style>
+/* ====== Checkpoint Manager ====== */
+.ck-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.ck-tag { padding: 4px 10px; border-radius: var(--radius-pill); background: var(--surface-alt); font-size: 12px; cursor: pointer; border: 1px solid var(--border); transition: all .15s; }
+.ck-tag:hover { border-color: var(--accent); }
+.ck-tag.best { border-color: var(--featured); color: var(--featured); }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <section class="card">
-      <h2>训练参数表单</h2>
-      <form id="trainForm">
-        <label>
-          实验模式
-          <select id="mode">
-            <option value="small">small（小样本验证）</option>
-            <option value="multiseed">multiseed（多种子重复）</option>
-          </select>
-        </label>
+<div class="app">
+  <!-- ====== Sidebar ====== -->
+  <aside class="sidebar">
+    <div class="logo">RecAcc<span> · 面板</span></div>
+    <nav class="nav" id="nav">
+      <div class="nav-item active" data-step="1"><span class="nav-num">1</span>数据预处理<span class="nav-badge" id="badge-1"></span></div>
+      <div class="nav-item" data-step="2"><span class="nav-num">2</span>模型训练<span class="nav-badge" id="badge-2"></span></div>
+      <div class="nav-item" data-step="3"><span class="nav-num">3</span>价值评估 SIF/DVF<span class="nav-badge" id="badge-3"></span></div>
+      <div class="nav-item" data-step="4"><span class="nav-num">4</span>归因评测 Benchmark<span class="nav-badge" id="badge-4"></span></div>
+    </nav>
+    <div class="timing" id="timingPanel">
+      <h4>⏱ 耗时统计</h4>
+      <div id="timingRows"><div class="timing-row"><span>等待开始</span><span class="val">--</span></div></div>
+    </div>
+  </aside>
 
-        <label>
-          模型（逗号分隔）
-          <input id="models" value="MLP,VAE,NCF" />
-        </label>
-
-        <div class="grid2">
-          <label>
-            n_train
-            <input id="nTrain" type="number" min="1" value="12" />
-          </label>
-          <label>
-            n_val
-            <input id="nVal" type="number" min="1" value="64" />
-          </label>
+  <!-- ====== Main ====== -->
+  <main class="main">
+    <!-- Step 1: Data -->
+    <section class="section active" id="sec-1">
+      <div class="card">
+        <h3>📦 数据预处理</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          <label>数据集<select id="s1-dataset"><option value="Pinterest">Pinterest</option><option value="Yahoo">Yahoo</option><option value="ML1M">MovieLens 1M</option></select></label>
+          <label>最大行数 (0=全量)<input id="s1-maxrows" type="number" value="0" min="0" /></label>
+          <label>最小用户交互数<input id="s1-minuser" type="number" value="5" min="1" /></label>
+          <label>最小物品交互数<input id="s1-minitem" type="number" value="5" min="1" /></label>
+          <label>验证用户比例<input id="s1-valratio" type="number" value="0.2" min="0" max="1" step="0.05" /></label>
+          <label>每正样本负样本数<input id="s1-negratio" type="number" value="1" min="1" max="10" /></label>
         </div>
-
-        <div class="grid2">
-          <label>
-            utility_epochs
-            <input id="epochs" type="number" min="1" value="1" />
-          </label>
-          <label>
-            mc_iters
-            <input id="mcIters" type="number" min="1" value="4" />
-          </label>
-        </div>
-
-        <div class="grid2">
-          <label>
-            lr
-            <input id="lr" type="number" min="0" step="0.0001" value="0.001" />
-          </label>
-          <label>
-            seeds（仅 multiseed）
-            <input id="seeds" value="7,42,99" />
-          </label>
-        </div>
-
-        <label>
-          Notebook (.ipynb) 上传
-          <input id="notebookFile" type="file" accept=".ipynb,application/json" />
-          <div class="hint">上传并解析 Jupyter Notebook，页面将展示解析内容。</div>
-        </label>
-
-        <div class="row">
-          <button class="primary" type="submit" id="startBtn">开始训练流程</button>
-          <button class="danger hidden" type="button" id="stopBtn" disabled>终止当前运行</button>
-          <button class="ghost" type="button" id="resetBtn">重置状态</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>步骤执行面板</h2>
-      <div class="steps" id="steps"></div>
-      <div class="logs">
-        <h3>运行日志</h3>
-        <pre id="logBox">等待开始...</pre>
+        <button class="btn btn-primary" id="s1-run">执行预处理</button>
+        <span style="margin-left:12px;font-size:12px;color:var(--text-secondary)" id="s1-time"></span>
       </div>
-      <div class="logs">
-        <h3>Notebook 预览</h3>
-        <div id="notebookViewer">
-          <div class="hint">未加载任何 Notebook，使用左侧表单上传 .ipynb 文件。</div>
-        </div>
+      <div class="card" id="s1-stats" style="display:none">
+        <h3>📊 数据概览</h3>
+        <div class="stats-grid" id="s1-stats-grid"></div>
+        <div class="log-panel" id="s1-log" style="margin-top:10px;max-height:200px"></div>
       </div>
     </section>
-  </div>
 
-  <script>
-    const stepDefs = [
-      { key: "s1", title: "Step1 数据与环境初始化" },
-      { key: "s2", title: "Step2 模型训练（输出 step2_training）" },
-      { key: "s3", title: "Step3 价值评估（输出 step3_valuation）" },
-      { key: "s4", title: "Step4 归因对比（输出 step4_attribution_benchmark）" },
-    ];
+    <!-- Step 2: Training -->
+    <section class="section" id="sec-2">
+      <div class="card">
+        <h3>🏋️ 训练配置</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          <label>模型<select id="s2-models" multiple style="height:80px"><option value="MLP" selected>MLP</option><option value="NCF">NCF</option><option value="VAE">VAE</option></select></label>
+          <label>Loss<select id="s2-loss"><option value="bpr" selected>BPR</option><option value="bce">BCE</option></select></label>
+          <label>Epochs<input id="s2-epochs" type="number" value="50" min="1" /></label>
+          <label>Learning Rate (MLP)<input id="s2-lr-mlp" type="number" value="0.002" step="0.0001" /></label>
+          <label>Learning Rate (NCF)<input id="s2-lr-ncf" type="number" value="0.001" step="0.0001" /></label>
+          <label>Learning Rate (VAE)<input id="s2-lr-vae" type="number" value="0.004" step="0.0001" /></label>
+          <label>Batch Size<input id="s2-batch" type="number" value="256" /></label>
+          <label>Weight Decay<input id="s2-wd" type="number" value="0.001" step="0.0001" /></label>
+          <label>Early Stop Patience<input id="s2-patience" type="number" value="6" min="1" /></label>
+        </div>
+        <button class="btn btn-primary" id="s2-run">开始训练</button>
+        <span style="margin-left:12px;font-size:12px;color:var(--text-secondary)" id="s2-time"></span>
+      </div>
+      <div class="card" id="s2-metrics" style="display:none">
+        <h3>📈 训练指标</h3>
+        <div style="overflow-x:auto"><table id="s2-table"><thead><tr><th>Epoch</th><th>train_loss</th><th>val_loss</th><th>AUC</th><th>Rec@20</th><th>NDCG@20</th><th>sec</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="card" id="s2-ckpt" style="display:none">
+        <h3>💾 检查点管理</h3>
+        <div class="ck-list" id="s2-ckpt-list"></div>
+      </div>
+    </section>
 
-    const stepsEl = document.getElementById("steps");
-    const logBox = document.getElementById("logBox");
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
+    <!-- Step 3: Valuation -->
+    <section class="section" id="sec-3">
+      <div class="card">
+        <h3>💰 SIF / DVF 价值评估</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          <label>评估样本数<input id="s3-nsamples" type="number" value="256" min="64" /></label>
+          <label>评估模型<select id="s3-models" multiple style="height:60px"><option value="MLP" selected>MLP</option><option value="NCF">NCF</option><option value="VAE">VAE</option></select></label>
+        </div>
+        <button class="btn btn-primary" id="s3-run">运行评估</button>
+        <span style="margin-left:12px;font-size:12px;color:var(--text-secondary)" id="s3-time"></span>
+      </div>
+      <div class="card" id="s3-result" style="display:none">
+        <h3>📋 评估结果</h3>
+        <div style="overflow-x:auto"><table id="s3-table"><thead><tr><th>Model</th><th>Samples</th><th>mean SIF</th><th>mean DVF</th><th>SIF time</th><th>DVF time</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
 
-    function setRunningUi(running) {
-      if (running) {
-        startBtn.classList.add("hidden");
-        stopBtn.classList.remove("hidden");
-        stopBtn.disabled = false;
-      } else {
-        startBtn.classList.remove("hidden");
-        stopBtn.classList.add("hidden");
-        stopBtn.disabled = true;
-      }
-    }
+    <!-- Step 4: Attribution Benchmark -->
+    <section class="section" id="sec-4">
+      <div class="card">
+        <h3>🎯 归因器 Benchmark</h3>
+        <div class="form-grid" style="margin-bottom:14px">
+          <label>控制集大小 (LOO)<input id="s4-ncontrol" type="number" value="64" min="16" max="256" /></label>
+          <label>Val 样本数<input id="s4-nval" type="number" value="512" min="64" /></label>
+          <label>LOO 训练 Epochs<input id="s4-loepochs" type="number" value="10" min="1" /></label>
+          <label>LOO 种子数<input id="s4-loseeds" type="number" value="3" min="1" /></label>
+          <label>Bench Seeds<input id="s4-seeds" value="7,42,91" /></label>
+          <label>方法<select id="s4-methods" multiple style="height:70px"><option value="SIF" selected>SIF</option><option value="SIF+">SIF+</option><option value="IF-diag" selected>IF-diag</option><option value="DVF" selected>DVF</option></select></label>
+        </div>
+        <button class="btn btn-primary" id="s4-run">运行 Benchmark</button>
+        <span style="margin-left:12px;font-size:12px;color:var(--text-secondary)" id="s4-time"></span>
+      </div>
+      <div class="card" id="s4-result" style="display:none">
+        <h3>📊 Spearman vs LOO Ground Truth</h3>
+        <div style="overflow-x:auto"><table id="s4-table"><thead><tr><th>Model</th><th>Method</th><th>ρ mean</th><th>ρ std</th><th>Time (s)</th><th>Tier</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
 
-    /* Notebook parsing & rendering */
-    function escapeHtml(s) {
-      return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
+    <!-- Global log -->
+    <div class="card" style="margin-top:16px">
+      <h3>📜 运行日志</h3>
+      <div class="log-panel" id="globalLog">就绪 — 从左侧导航选择一个步骤开始。</div>
+    </div>
+  </main>
+</div>
 
-    function markdownToHtml(md) {
-      // Very small, naive markdown -> html converter for common patterns
-      let out = md.replace(/&/g, '&amp;');
-      out = out.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      // code fences
-      out = out.replace(/```([\s\S]*?)```/g, (m, p1) => `<pre><code>${escapeHtml(p1)}</code></pre>`);
-      // headings
-      out = out.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
-      out = out.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
-      out = out.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-      out = out.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-      out = out.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-      out = out.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-      // inline code
-      out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
-      // bold/italic
-      out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      out = out.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      // paragraphs
-      out = out.replace(/^(?!<h|<pre|<ul|<ol|<blockquote)(.+)$/gim, '<p>$1</p>');
-      return out;
-    }
+<script>
+// ===== State =====
+const state = { currentStep: 1, timings: {} };
 
-    function renderNotebook(nb) {
-      const viewer = document.getElementById('notebookViewer');
-      viewer.innerHTML = '';
-      if (!nb || !Array.isArray(nb.cells)) {
-        viewer.innerHTML = '<div class="hint">无法识别的 Notebook 格式。</div>';
-        return;
-      }
-      const container = document.createElement('div');
-      container.className = 'notebook';
-      nb.cells.forEach((cell, idx) => {
-        const cellEl = document.createElement('div');
-        const src = Array.isArray(cell.source) ? cell.source.join('') : (cell.source || '');
-        if (cell.cell_type === 'markdown') {
-          cellEl.className = 'nb-cell markdown';
-          cellEl.innerHTML = markdownToHtml(src);
-        } else if (cell.cell_type === 'code') {
-          cellEl.className = 'nb-cell code';
-          const pre = document.createElement('pre');
-          const code = document.createElement('code');
-          code.textContent = src;
-          pre.appendChild(code);
-          cellEl.appendChild(pre);
+// ===== Navigation =====
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    const s = el.dataset.step;
+    state.currentStep = parseInt(s);
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    document.getElementById(`sec-${s}`).classList.add('active');
+  });
+});
 
-          // render outputs (text/plain)
-          if (Array.isArray(cell.outputs) && cell.outputs.length) {
-            cell.outputs.forEach((out) => {
-              if (out.text) {
-                const o = document.createElement('pre');
-                o.textContent = Array.isArray(out.text) ? out.text.join('') : out.text;
-                o.style.marginTop = '8px';
-                cellEl.appendChild(o);
-              } else if (out.data && out.data['text/plain']) {
-                const o = document.createElement('pre');
-                o.textContent = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join('') : out.data['text/plain'];
-                o.style.marginTop = '8px';
-                cellEl.appendChild(o);
-              }
-            });
-          }
-        } else {
-          cellEl.className = 'nb-cell';
-          cellEl.textContent = src;
-        }
-        container.appendChild(cellEl);
-      });
-      viewer.appendChild(container);
-    }
+// ===== Badge =====
+function setBadge(step, status) {
+  const b = document.getElementById(`badge-${step}`);
+  if (!b) return;
+  b.className = 'nav-badge';
+  if (status === 'done') { b.classList.add('done'); b.textContent = '✓'; }
+  else if (status === 'running') { b.classList.add('running'); b.textContent = '…'; }
+  else if (status === 'error') { b.classList.add('error'); b.textContent = '✗'; }
+  else { b.textContent = ''; }
+}
 
-    function parseNotebookFile(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const nb = JSON.parse(reader.result);
-          renderNotebook(nb);
-          appendLog(`已解析 Notebook: ${file.name}`);
-        } catch (err) {
-          appendLog(`解析 Notebook 失败: ${err.message}`);
-          const viewer = document.getElementById('notebookViewer');
-          viewer.innerHTML = '<div class="hint">解析失败，非有效 JSON 或 .ipynb 文件。</div>';
-        }
-      };
-      reader.onerror = () => {
-        appendLog('读取 Notebook 文件失败');
-      };
-      reader.readAsText(file);
-    }
+// ===== Logging =====
+function log(msg, isError) {
+  const el = document.getElementById('globalLog');
+  const ts = new Date().toLocaleTimeString();
+  el.innerHTML += `\n<span class="ts">[${ts}]</span> <span class="${isError?'err':''}">${msg}</span>`;
+  el.scrollTop = el.scrollHeight;
+}
 
-    document.getElementById('notebookFile').addEventListener('change', (e) => {
-      const f = e.target.files && e.target.files[0];
-      if (f) parseNotebookFile(f);
+// ===== Timing =====
+function updateTiming(label, sec) {
+  state.timings[label] = sec;
+  const rows = Object.entries(state.timings).map(([k, v]) =>
+    `<div class="timing-row"><span>${k}</span><span class="val">${v.toFixed(1)}s</span></div>`
+  ).join('');
+  document.getElementById('timingRows').innerHTML = rows || '<div class="timing-row"><span>—</span><span class="val">--</span></div>';
+}
+
+// ===== Step 1: Data Preprocessing =====
+document.getElementById('s1-run').addEventListener('click', async () => {
+  const btn = document.getElementById('s1-run');
+  btn.disabled = true; btn.textContent = '执行中…';
+  setBadge(1, 'running');
+  const t0 = performance.now();
+
+  // Build params
+  const params = {
+    dataset: document.getElementById('s1-dataset').value,
+    max_rows: parseInt(document.getElementById('s1-maxrows').value) || null,
+    min_user_count: parseInt(document.getElementById('s1-minuser').value),
+    min_item_count: parseInt(document.getElementById('s1-minitem').value),
+    val_user_ratio: parseFloat(document.getElementById('s1-valratio').value),
+    neg_per_pos: parseInt(document.getElementById('s1-negratio').value),
+  };
+
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ step: 'data_preprocessing', ...params }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    // Poll status until done
+    await pollUntilDone((status) => {
+      document.getElementById('s1-log').textContent = status.logs || '';
     });
 
-    function buildSteps() {
-      stepsEl.innerHTML = "";
-      stepDefs.forEach((s, i) => {
-        const div = document.createElement("div");
-        div.className = "step";
-        div.id = s.key;
-        div.innerHTML = `
-          <div class="title">${i + 1}. ${s.title}</div>
-          <div class="status"><span class="dot"></span><span class="txt">等待中</span></div>
-          <div class="step-log" id="${s.key}-log">等待该步骤开始...</div>
-        `;
-        stepsEl.appendChild(div);
-      });
+  } catch (err) {
+    log(`预处理失败: ${err.message}`, true);
+    setBadge(1, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '执行预处理';
+  }
+  const dt = (performance.now() - t0) / 1000;
+  document.getElementById('s1-time').textContent = `⏱ ${dt.toFixed(1)}s`;
+  updateTiming('数据预处理', dt);
+  setBadge(1, 'done');
+
+  // Fetch and show stats
+  try {
+    const res = await fetch('/api/data_stats');
+    const stats = await res.json();
+    if (stats.ok) {
+      document.getElementById('s1-stats').style.display = 'block';
+      document.getElementById('s1-stats-grid').innerHTML =
+        Object.entries(stats).map(([k, v]) =>
+          `<div class="stat"><div class="val">${typeof v === 'number' ? v.toLocaleString() : v}</div><div class="lbl">${k}</div></div>`
+        ).join('');
     }
+  } catch (_) {}
+  log('数据预处理完成');
+});
 
-    function setStep(key, state, text) {
-      const el = document.getElementById(key);
-      if (!el) return;
-      el.classList.remove("running", "done", "error");
-      if (state) el.classList.add(state);
-      el.querySelector(".txt").textContent = text;
-    }
+// ===== Step 2: Training =====
+document.getElementById('s2-run').addEventListener('click', async () => {
+  const btn = document.getElementById('s2-run');
+  btn.disabled = true; btn.textContent = '训练中…';
+  setBadge(2, 'running');
+  const t0 = performance.now();
 
-    function appendLog(line) {
-      const now = new Date().toLocaleTimeString();
-      const prefix = `[${now}] `;
-      logBox.textContent += `\n${prefix}${line}`;
-      logBox.scrollTop = logBox.scrollHeight;
-    }
+  const models = Array.from(document.getElementById('s2-models').selectedOptions).map(o => o.value);
+  const params = {
+    step: 'training',
+    models,
+    loss_fn: document.getElementById('s2-loss').value,
+    epochs: parseInt(document.getElementById('s2-epochs').value),
+    lr: { MLP: parseFloat(document.getElementById('s2-lr-mlp').value),
+          NCF: parseFloat(document.getElementById('s2-lr-ncf').value),
+          VAE: parseFloat(document.getElementById('s2-lr-vae').value) },
+    batch_size: parseInt(document.getElementById('s2-batch').value),
+    weight_decay: parseFloat(document.getElementById('s2-wd').value),
+    early_stop_patience: parseInt(document.getElementById('s2-patience').value),
+  };
 
-    function setStepLog(key, text) {
-      const el = document.getElementById(`${key}-log`);
-      if (!el) return;
-      el.textContent = text && text.trim() ? text : "等待该步骤开始...";
-      el.scrollTop = el.scrollHeight;
-    }
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
 
-    function sleep(ms) {
-      return new Promise((r) => setTimeout(r, ms));
-    }
+    // Clear table
+    const tbody = document.querySelector('#s2-table tbody');
+    tbody.innerHTML = '';
 
-    function parseForm() {
-      const mode = document.getElementById("mode").value;
-      const models = document.getElementById("models").value
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
-      const nTrain = Number(document.getElementById("nTrain").value);
-      const nVal = Number(document.getElementById("nVal").value);
-      const epochs = Number(document.getElementById("epochs").value);
-      const mcIters = Number(document.getElementById("mcIters").value);
-      const lr = Number(document.getElementById("lr").value);
-      const seeds = document.getElementById("seeds").value
-        .split(",")
-        .map((x) => Number(x.trim()))
-        .filter((x) => Number.isFinite(x));
-
-      return { mode, models, nTrain, nVal, epochs, mcIters, lr, seeds };
-    }
-
-    let pollTimer = null;
-    let pollAbortController = null;
-
-    function renderFromStatus(status) {
-      const map = status.steps || {};
-      const labelByState = {
-        idle: "等待中",
-        running: "执行中",
-        done: "完成",
-        error: "失败",
-      };
-
-      stepDefs.forEach((s) => {
-        const st = map[s.key] || "idle";
-        setStep(s.key, st === "idle" ? "" : st, labelByState[st] || st);
-      });
-
-      const stepLogs = status.step_logs || {};
-      stepDefs.forEach((s) => {
-        const lines = stepLogs[s.key] || [];
-        const text = Array.isArray(lines) ? lines.join("\n") : String(lines || "");
-        setStepLog(s.key, text);
-      });
-
-      logBox.textContent = status.logs || "等待开始...";
-      logBox.scrollTop = logBox.scrollHeight;
-      setRunningUi(!!status.running);
-    }
-
-    async function fetchStatus(signal) {
-      const res = await fetch("/api/status", { cache: "no-store", signal });
-      if (!res.ok) {
-        throw new Error("获取状态失败");
-      }
-      return res.json();
-    }
-
-    async function startRun(params) {
-      const payload = {
-        mode: params.mode,
-        models: params.models,
-        n_train: params.nTrain,
-        n_val: params.nVal,
-        utility_epochs: params.epochs,
-        mc_iters: params.mcIters,
-        lr: params.lr,
-        seeds: params.seeds,
-        train_epochs: 3,
-        train_lr: params.lr,
-      };
-
-      const res = await fetch("/api/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "启动失败");
-      }
-    }
-
-    async function stopRun() {
-      const res = await fetch("/api/stop", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "终止失败");
-      }
-    }
-
-    async function resetRun() {
-      const res = await fetch("/api/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "重置失败");
-      }
-    }
-
-    function stopPolling() {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-      }
-      if (pollAbortController) {
+    await pollUntilDone((status) => {
+      // Parse per-epoch rows from logs
+      const logs = status.logs || '';
+      const lines = logs.split('\n');
+      for (const line of lines) {
         try {
-          pollAbortController.abort();
+          const row = JSON.parse(line.trim());
+          if (row.epoch && row.train_loss !== undefined) {
+            updateTrainingRow(row);
+          }
         } catch (_) {}
-        pollAbortController = null;
+      }
+    });
+
+    // Fetch training summary
+    const sumRes = await fetch('/api/training_summary');
+    const summary = await sumRes.json();
+    if (summary.ok && summary.rows) {
+      for (const row of summary.rows) {
+        updateTrainingRow(row);
       }
     }
 
-    function startPolling() {
-      stopPolling();
-      pollTimer = setInterval(async () => {
-        pollAbortController = new AbortController();
-        try {
-          const status = await fetchStatus(pollAbortController.signal);
-          renderFromStatus(status);
-          if (status.done) {
-            stopPolling();
-            setRunningUi(false);
-            appendLog(status.success ? "流程已结束" : `流程失败: ${status.error || "未知错误"}`);
-          }
-        } catch (err) {
-          if (err && err.name === "AbortError") {
-            return;
-          }
-          stopPolling();
-          setRunningUi(false);
-          appendLog(`轮询中断: ${err.message || String(err)}`);
-        } finally {
-          pollAbortController = null;
-        }
-      }, 1000);
+  } catch (err) {
+    log(`训练失败: ${err.message}`, true);
+    setBadge(2, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '开始训练';
+  }
+  const dt = (performance.now() - t0) / 1000;
+  document.getElementById('s2-time').textContent = `⏱ ${dt.toFixed(0)}s`;
+  updateTiming('模型训练', dt);
+  document.getElementById('s2-metrics').style.display = 'block';
+  document.getElementById('s2-ckpt').style.display = 'block';
+  setBadge(2, 'done');
+  log('训练完成');
+});
+
+function updateTrainingRow(row) {
+  const tbody = document.querySelector('#s2-table tbody');
+  const existing = tbody.querySelector(`tr[data-epoch="${row.epoch}"]`);
+  if (existing) {
+    ['train_loss','loss','auc','recall@20','ndcg@20','sec'].forEach(k => {
+      const td = existing.querySelector(`td.${k.replace('@','-')}`);
+      if (td && row[k] !== undefined) td.textContent = typeof row[k] === 'number' ? row[k].toFixed(4) : row[k];
+    });
+    return;
+  }
+  const tr = document.createElement('tr');
+  tr.dataset.epoch = row.epoch;
+  ['epoch','train_loss','loss','auc','recall@20','ndcg@20','sec'].forEach(k => {
+    const td = document.createElement('td');
+    td.className = k.replace('@','-');
+    td.textContent = row[k] !== undefined ? (typeof row[k] === 'number' ? row[k].toFixed(4) : row[k]) : '—';
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+}
+
+// ===== Step 3: Valuation =====
+document.getElementById('s3-run').addEventListener('click', async () => {
+  const btn = document.getElementById('s3-run');
+  btn.disabled = true; btn.textContent = '评估中…';
+  setBadge(3, 'running');
+  const t0 = performance.now();
+
+  const models = Array.from(document.getElementById('s3-models').selectedOptions).map(o => o.value);
+  const params = {
+    step: 'valuation',
+    models,
+    n_samples: parseInt(document.getElementById('s3-nsamples').value),
+  };
+
+  try {
+    const res = await fetch('/api/run', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(params) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    await pollUntilDone(() => {});
+    const sumRes = await fetch('/api/valuation_summary');
+    const summary = await sumRes.json();
+    if (summary.ok && summary.rows) {
+      document.getElementById('s3-result').style.display = 'block';
+      const tbody = document.querySelector('#s3-table tbody');
+      tbody.innerHTML = summary.rows.map(r => `<tr><td>${r.model}</td><td>${r.num_scored}</td><td>${r.mean_sif?.toFixed(6)}</td><td>${r.mean_dvf?.toFixed(6)}</td><td>${r.sif_time_sec?.toFixed(1)}s</td><td>${r.dvf_time_sec?.toFixed(1)}s</td></tr>`).join('');
     }
+  } catch (err) {
+    log(`评估失败: ${err.message}`, true);
+    setBadge(3, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '运行评估';
+  }
+  const dt = (performance.now() - t0) / 1000;
+  document.getElementById('s3-time').textContent = `⏱ ${dt.toFixed(0)}s`;
+  updateTiming('价值评估', dt);
+  setBadge(3, 'done');
+  log('SIF/DVF 评估完成');
+});
 
-    document.getElementById("trainForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const params = parseForm();
+// ===== Step 4: Attribution Benchmark =====
+document.getElementById('s4-run').addEventListener('click', async () => {
+  const btn = document.getElementById('s4-run');
+  btn.disabled = true; btn.textContent = 'Benchmark 运行中…';
+  setBadge(4, 'running');
+  const t0 = performance.now();
+
+  const params = {
+    step: 'attribution_benchmark',
+    n_control: parseInt(document.getElementById('s4-ncontrol').value),
+    n_val: parseInt(document.getElementById('s4-nval').value),
+    loo_epochs: parseInt(document.getElementById('s4-loepochs').value),
+    loo_seeds: parseInt(document.getElementById('s4-loseeds').value),
+    seeds: document.getElementById('s4-seeds').value.split(',').map(s => parseInt(s.trim())),
+    methods: Array.from(document.getElementById('s4-methods').selectedOptions).map(o => o.value),
+  };
+
+  try {
+    const res = await fetch('/api/run', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(params) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    await pollUntilDone(() => {});
+    const sumRes = await fetch('/api/benchmark_summary');
+    const summary = await sumRes.json();
+    if (summary.ok && summary.rows) {
+      document.getElementById('s4-result').style.display = 'block';
+      const tbody = document.querySelector('#s4-table tbody');
+      tbody.innerHTML = summary.rows.map(r => {
+        const m = r.spearman_mean, s = r.spearman_std;
+        const tier = m > 0.15 && s < 0.1 ? 'strong' : m > 0.05 && s < 0.15 ? 'moderate' : m > 0 ? 'weak' : 'invalid';
+        return `<tr><td>${r.model}</td><td>${r.method}</td><td style="color:${m>0?'var(--success)':'var(--error)'}">${m?.toFixed(4)}</td><td>${s?.toFixed(4)}</td><td>${r.time_mean?.toFixed(1)}s</td><td>${tier}</td></tr>`;
+      }).join('');
+    }
+  } catch (err) {
+    log(`Benchmark 失败: ${err.message}`, true);
+    setBadge(4, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '运行 Benchmark';
+  }
+  const dt = (performance.now() - t0) / 1000;
+  document.getElementById('s4-time').textContent = `⏱ ${dt.toFixed(0)}s`;
+  updateTiming('归因评测', dt);
+  setBadge(4, 'done');
+  log('归因 Benchmark 完成');
+});
+
+// ===== Polling =====
+async function pollUntilDone(onTick) {
+  return new Promise((resolve, reject) => {
+    const iv = setInterval(async () => {
       try {
-        logBox.textContent = "开始执行...";
-        buildSteps();
-        await startRun(params);
-        setRunningUi(true);
-        startPolling();
-      } catch (err) {
-        setRunningUi(false);
-        appendLog(`执行失败: ${err.message || String(err)}`);
-        const running = document.querySelector(".step.running");
-        if (running) {
-          running.classList.remove("running");
-          running.classList.add("error");
-          running.querySelector(".txt").textContent = "执行失败";
+        const res = await fetch('/api/status', { cache: 'no-store' });
+        const status = await res.json();
+        if (onTick) onTick(status);
+        if (status.done) {
+          clearInterval(iv);
+          if (status.success) resolve(); else reject(new Error(status.error || '未知错误'));
         }
-      }
-    });
-
-    stopBtn.addEventListener("click", async () => {
-      stopPolling();
-      stopBtn.disabled = true;
-      try {
-        await stopRun();
-        appendLog("已发送终止请求，已切断状态轮询");
       } catch (err) {
-        appendLog(`终止失败: ${err.message || String(err)}`);
+        clearInterval(iv);
+        reject(err);
       }
-    });
+    }, 1000);
+  });
+}
 
-    document.getElementById("resetBtn").addEventListener("click", async () => {
-      try {
-        await resetRun();
-      } catch (err) {
-        appendLog(`重置失败: ${err.message || String(err)}`);
-      }
-      stopPolling();
-      setRunningUi(false);
-      logBox.textContent = "等待开始...";
-      buildSteps();
-    });
-
-    setRunningUi(false);
-    buildSteps();
-  </script>
+log('面板就绪');
+</script>
 </body>
 </html>

@@ -536,6 +536,28 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(raw)
 
+    def _read_csv_rows(self, path: Path):
+        """Read CSV to list of dicts for JSON response."""
+        import csv as _csv
+        if not path.exists():
+            return None
+        with open(path, "r", encoding="utf-8-sig") as f:
+            reader = _csv.DictReader(f)
+            return [row for row in reader]
+
+    def _latest_step_dir(self, step_name: str) -> Path | None:
+        step_dir = RECACC_DIR / "log" / "notebook_runs" / step_name
+        if not step_dir.exists():
+            return None
+        latest_ptr = step_dir / "latest_run.txt"
+        if latest_ptr.exists():
+            ts = latest_ptr.read_text(encoding="utf-8").strip()
+            p = step_dir / ts
+            if p.exists():
+                return p
+        cands = sorted([p for p in step_dir.iterdir() if p.is_dir()], key=lambda p: p.name, reverse=True)
+        return cands[0] if cands else None
+
     def do_GET(self):
         if self.path == "/" or self.path == "/train_wizard.html":
             return self._serve_file(WEB_DIR / "train_wizard.html", "text/html; charset=utf-8")
@@ -546,6 +568,64 @@ class Handler(BaseHTTPRequestHandler):
                 payload = dict(JOB_STATE)
                 payload["logs"] = "\n".join(JOB_STATE["logs"])
             return self._json(HTTPStatus.OK, payload)
+
+        # --- Data stats ---
+        if self.path == "/api/data_stats":
+            cache = RECACC_DIR / "log" / "notebook_cache" / "prepared_data.pt"
+            if cache.exists():
+                import torch as _torch
+                try:
+                    data = _torch.load(cache, map_location="cpu", weights_only=True)
+                    stats = {
+                        "users": int(data.get("num_users", 0)),
+                        "items": int(data.get("num_items", 0)),
+                        "samples": int(data["labels"].shape[0]),
+                        "pos_rate": round(float(data["labels"].float().mean().item()), 4),
+                        "density": round(float(data["user_item_matrix"].float().mean().item()), 4),
+                    }
+                    return self._json(HTTPStatus.OK, {"ok": True, **stats})
+                except Exception:
+                    pass
+            return self._json(HTTPStatus.OK, {"ok": False, "error": "no cache"})
+
+        # --- Training summary ---
+        if self.path == "/api/training_summary":
+            d = self._latest_step_dir("step2_training")
+            if d:
+                rows = self._read_csv_rows(d / "summary.csv")
+                if rows:
+                    return self._json(HTTPStatus.OK, {"ok": True, "rows": rows})
+            return self._json(HTTPStatus.OK, {"ok": False, "error": "no training data"})
+
+        # --- Valuation summary ---
+        if self.path == "/api/valuation_summary":
+            d = self._latest_step_dir("step3_valuation")
+            if d:
+                rows = self._read_csv_rows(d / "valuation_summary.csv")
+                if rows:
+                    return self._json(HTTPStatus.OK, {"ok": True, "rows": rows})
+            return self._json(HTTPStatus.OK, {"ok": False, "error": "no valuation data"})
+
+        # --- Benchmark summary ---
+        if self.path == "/api/benchmark_summary":
+            d = self._latest_step_dir("step5_unified_benchmark") or self._latest_step_dir("step4_attribution_benchmark")
+            if d:
+                for fname in ["benchmark_summary.csv", "attribution_benchmark_summary.csv"]:
+                    rows = self._read_csv_rows(d / fname)
+                    if rows:
+                        # Rename cols for frontend
+                        out = []
+                        for r in rows:
+                            out.append({
+                                "model": r.get("model", ""),
+                                "method": r.get("method", ""),
+                                "spearman_mean": float(r.get("spearman_mean", r.get("spearman_vs_loo_mean", 0))),
+                                "spearman_std": float(r.get("spearman_std", r.get("spearman_vs_loo_std", 0))),
+                                "time_mean": float(r.get("time_mean_sec", r.get("time_mean", 0))),
+                            })
+                        return self._json(HTTPStatus.OK, {"ok": True, "rows": out})
+            return self._json(HTTPStatus.OK, {"ok": False, "error": "no benchmark data"})
+
         self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 
     def do_POST(self):
