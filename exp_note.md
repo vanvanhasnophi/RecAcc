@@ -14,6 +14,9 @@
 | 07-23 | 切到 Linear-multi-hot 架构 | Recall@20: 0.007 → 0.18 |
 | 07-24 | VAE 修复为 SPINRec 原版 autoencoder | AUC 0.71 → 0.97 |
 | 07-24 | 三种模型评估加速 | VAE eval: 112s → 6s |
+| 07-25 | 余弦退火 + 周期早停 | ReplaceLR → CosineAnnealing |
+| 07-25 | RecDataset 去 clone + GPU matrix | 20s/epoch → 14s/epoch |
+| 07-26 | 发现 evaluate_ranking 未屏蔽训练集物品 | Recall 被训练物品占坑压低 |
 
 ---
 
@@ -61,6 +64,60 @@ VAE 的 softmax 输出套在 BPR evaluate 里 acc=0.5 是 cosmetic issue，AUC �
 | LinearRec | 19 forward | 1 matmul (128×n_items) | ≤ 100M items |
 | LinearVAE | 19 forward | 1 forward | ≤ 50M items |
 | LinearNCF | 19 forward | ~10 forward @ 1024 batch | 任意大小 |
+
+
+
+---
+
+## 余弦退火 + 周期早停
+
+### 问题
+
+`ReduceLROnPlateau` 盯 BPR val_loss，但 CSWR 下 loss 每 cycle 重启会跳涨 → 误触发降 lr 或早停。
+
+### 修复
+
+- `ReduceLROnPlateau` → `CosineAnnealingWarmRestarts(T_0, T_mult)`
+- early_stop 改为周期级：连续 2 个 cosine cycle 无改善则停
+- `cycle_improved` 跟踪整个周期内是否有任何 epoch 破纪录
+- 每模型独立 `cosine_T0`：MLP=5, NCF=5, VAE=10
+
+### 效果
+
+- MLP 15 epoch 内自动停，不浪费
+- NCF 可跑满 15-25 epoch
+- VAE 50 epoch 自然收敛
+
+---
+
+## 三模型差异化训练路径
+
+| 模型 | 训练路径 | 早停依据 | cosine_T0 |
+|------|---------|---------|-----------|
+| MLP | BPR pairwise | val_loss（周期级） | 5 |
+| NCF | BPR pairwise | val_loss（周期级） | 5 |
+| VAE | `train_one_epoch` (CE+KL autoencoder) | train_loss（周期级） | 10 |
+
+VAE 走独立的 `train_one_epoch`——重建完整用户向量，不再塞进 pairwise batch 循环。
+
+---
+
+## 训练速度优化
+
+| 改动 | 位置 | 效果 |
+|------|------|------|
+| `__getitem__` 返回 `int` 而非 `clone()` tensor | RecDataset | 消除 153,600 次 clone/epoch |
+| `user_item_matrix` 预加载到 GPU | pipeline | 消除 CPU→GPU 拷贝 |
+| VAE 走单次 GPU matmul | evaluate_ranking | 19 forward → 1 forward |
+| MLP 走 `u @ weight` | evaluate_ranking | 19 forward → 1 matmul |
+
+总：20s/epoch → 14s/epoch（MLP/NCF），VAE eval 112s → 6s。
+
+---
+
+## evaluate_ranking 未屏蔽训练集物品（待修）
+
+SPINRec 原文 `masked_fill(train_matrix.bool(), -inf)`。当前代码对全部物品排序取 top-K，训练物品天然高分占坑，Recall 被系统性压低。
 
 ---
 
