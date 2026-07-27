@@ -10,114 +10,102 @@
 |------|--------|------------|
 | 07-23 | 修复配置问题，训练能跑 | AUC 0.50 → 0.70 |
 | 07-23 | 发现 AUC 天花板（假阴性 ~60%） | 引入 BPR + Recall@K |
-| 07-23 | BPR+Embedding 得 Recall@20=0.007 | 确认 Embedding 架构行不通 |
-| 07-23 | 切到 Linear-multi-hot 架构 | Recall@20: 0.007 → 0.18 |
+| 07-23 | BPR+Embedding 得 Recall@20=0.007 | Embedding 架构行不通 |
+| 07-23 | 切到 Linear-multi-hot | Recall@20: 0.007 → 0.18 |
 | 07-24 | VAE 修复为 SPINRec 原版 autoencoder | AUC 0.71 → 0.97 |
-| 07-24 | 三种模型评估加速 | VAE eval: 112s → 6s |
-| 07-25 | 余弦退火 + 周期早停 | ReplaceLR → CosineAnnealing |
-| 07-25 | RecDataset 去 clone + GPU matrix | 20s/epoch → 14s/epoch |
-| 07-26 | 发现 evaluate_ranking 未屏蔽训练集物品 | Recall 被训练物品占坑压低 |
+| 07-25 | 余弦退火 + 周期早停 | ReduceLROnPlateau → CosineAnnealing |
+| 07-26 | 屏蔽训练集物品 in evaluate_ranking | Recall: 0.18 → 0.02（真值） |
+| 07-26 | BCE-30 负采样 | Recall: 0.02 → 0.10 |
+| 07-27 | 低 lr (1e-4) 收敛轨迹 | 归因信号仅在早期 epoch 存在 |
+| 07-28 | LOO epoch1 归因验证 | IF-diag ρ=±0.15，SIF vs IF 完美反相关 |
 
 ---
 
 ## 核心发现
 
-### 1. Embedding vs Linear-multi-hot（架构即天花板）
+### 1. Embedding vs Linear-multi-hot
 
-SPINRec 用 `Linear(num_items, hidden)` 输入 multi-hot 用户向量，每个物品是独立特征。
-我们用 `Embedding(user_id)` 把用户压成 32 维向量 — 梯度信号太密，SIF/DVF 无区分度。
+SPINRec 用 `Linear(num_items, hidden)`，每个物品是独立特征。Embedding 压成 32 维→梯度无区分度。
 
 | 指标 | Embedding | Linear |
 |------|-----------|--------|
 | Recall@20 | 0.007 | 0.18 |
-| 可解释性 | embedding 维度无意义 | 每个维度 = 一个物品 |
+| 归因可解释性 | embedding 维度无意义 | 每个维度 = 一个物品 |
 
-### 2. 三种模型需不同训练策略（SPINRec 的设计）
+### 2. 三种模型需不同训练策略
 
-| 模型 | 训练范式 | 不能混用 |
+| 模型 | 训练范式 | 当前状态 |
 |------|---------|---------|
-| LinearRec | pairwise (BPR/BCE) | — |
-| LinearNCF | pairwise (BPR) | — |
-| LinearVAE | autoencoder (CE + KL) | 不能塞进 BPR 循环 |
+| LinearRec | pairwise (BCE-30) | AUC 0.99, Recall 0.10 |
+| LinearNCF | pairwise (BCE-30) | AUC 0.98, 归因信号弱于 MLP |
+| LinearVAE | autoencoder (CE+KL) | AUC 0.97, 归因不兼容 |
 
-强行统一训练策略会压死 VAE（我们 VAE 初版 AUC 0.71，修复后 0.97）。
+### 3. IF 与 SIF 的反号关系（论文级）
 
-### 3. 当前三轮训练结果（Pinterest 全量）
+**IF 标准定义为 `-g_z^T H^{-1} g_val`，自带负号。SIF 为 `g_z^T g_val`，无负号。两者在 LO O上必然反号。**
 
-| 模型 | AUC | Recall@20 | NDCG@20 | 收敛速度 |
-|------|-----|-----------|---------|---------|
-| MLP | 0.93 | 0.18 | 0.27 | 10 epoch 内 |
-| NCF | 0.94 | 0.10 | 0.13 | 需更强正则 |
-| VAE | 0.97 | 待测 | 待测 | 30+ epoch |
+| 模型 | Seed | SIF ρ | IF-diag ρ |
+|------|------|--------|-----------|
+| MLP | 7 | -0.15 | **+0.15** |
+| MLP | 42 | +0.10 | **-0.10** |
+| MLP | 91 | +0.15 | **-0.15** |
+| NCF | 7 | +0.05 | -0.03 |
+| NCF | 91 | +0.12 | **-0.12** |
 
-### 4. BPR 下 val_loss 与 AACC 不反映过拟合
+不是 bug——IF 的负号是数学定义。论文里写明即可。
 
-BPR 优化 `pos > neg` 不控绝对值，val_BCE 必然上涨。scheduler/early_stop 应盯 AUC 而非 BCE loss。
-VAE 的 softmax 输出套在 BPR evaluate 里 acc=0.5 是 cosmetic issue，AUC 不受影响。
+### 4. 归因信号随训练衰减
 
----
+| epoch | ρ | 含义 |
+|-------|-----|------|
+| 1 | ±0.15 | 样本贡献可区分 |
+| 2 | ±0.04 | 衰减 |
+| 12 | 0.00 | 模型收敛→所有样本无差别 |
+| final | 0.00 | 同 |
 
-## 评估加速方案
+**结论**：归因只在训练早期有意义。CosineAnnealing 重启后信号也被压平。
 
-| 模型 | 旧 | 新 | 空间安全 |
-|------|-----|-----|---------|
-| LinearRec | 19 forward | 1 matmul (128×n_items) | ≤ 100M items |
-| LinearVAE | 19 forward | 1 forward | ≤ 50M items |
-| LinearNCF | 19 forward | ~10 forward @ 1024 batch | 任意大小 |
+### 5. MLP > NCF 对归因器
 
+MLP 只有 `user_fc + item_fc` 两层，梯度路径短，信号直接。NCF 的 GMF+MLP 双分支把梯度分散到 6 层 Linear + 3 层 Dropout——信号稀释 3-5 倍，ρ 相应下降。
 
+### 6. 高 lr 不可用于归因器
 
----
+高 lr 一步跳过所有中间状态直接到最优——所有样本的梯度贡献被压平。低 lr 每步只改一点点——样本间梯度差异被保留更久。归因需要"模型还在学"的状态，不是"模型已经学会"。
 
-## 余弦退火 + 周期早停
+### 7. 余弦重启对归因有负面影响
 
-### 问题
+epoch 12 的 ρ=0 不是因为模型收敛（val_loss 还在降），而是 CosineAnnealing 在 epoch 11 重启时所有参数以相同比例放大，冲销了不同样本在梯度中累积的差异。归因器需要在**第一个余弦周期内**完成采样——之后信号被重置。
 
-`ReduceLROnPlateau` 盯 BPR val_loss，但 CSWR 下 loss 每 cycle 重启会跳涨 → 误触发降 lr 或早停。
+### 8. Full softmax 失败的根本原因
 
-### 修复
+每个正样本 vs 9682 个隐式负样本——正梯度 1 份，负梯度 9682 份，正信号被稀释 10000 倍。收敛不动。BCE+30 负采样把对手缩到 30 → 梯度质量极高。
 
-- `ReduceLROnPlateau` → `CosineAnnealingWarmRestarts(T_0, T_mult)`
-- early_stop 改为周期级：连续 2 个 cosine cycle 无改善则停
-- `cycle_improved` 跟踪整个周期内是否有任何 epoch 破纪录
-- 每模型独立 `cosine_T0`：MLP=5, NCF=5, VAE=10
+### 9. LOO 方法学
 
-### 效果
+- `N_CONTROL=128` 够用了——同 seed 下 DVF 必须从 1 epoch 开始算，否则 ρ=0
+- `LOO_EPOCHS=10` 对 early checkpoint 够了（epoch 1 时模型还在快变期）
+- 不同 seed 的 ρ 符号可能翻转——LOO ground truth 本身的 sign ambiguity
 
-- MLP 15 epoch 内自动停，不浪费
-- NCF 可跑满 15-25 epoch
-- VAE 50 epoch 自然收敛
+### 10. 推荐器 AUC 的欺骗性
 
----
-
-## 三模型差异化训练路径
-
-| 模型 | 训练路径 | 早停依据 | cosine_T0 |
-|------|---------|---------|-----------|
-| MLP | BPR pairwise | val_loss（周期级） | 5 |
-| NCF | BPR pairwise | val_loss（周期级） | 5 |
-| VAE | `train_one_epoch` (CE+KL autoencoder) | train_loss（周期级） | 10 |
-
-VAE 走独立的 `train_one_epoch`——重建完整用户向量，不再塞进 pairwise batch 循环。
+AUC 0.99 看起来完美，但 Recall@20 只有 0.10——模型只学会正>负的相对排序，没学会在全量 8761 个物品中把正样本推到 top。AUC 不能反映真实排序能力。BCE-30 是目前验证的最佳平衡。
 
 ---
 
-## 训练速度优化
+## 训练配置（当前最优）
 
-| 改动 | 位置 | 效果 |
-|------|------|------|
-| `__getitem__` 返回 `int` 而非 `clone()` tensor | RecDataset | 消除 153,600 次 clone/epoch |
-| `user_item_matrix` 预加载到 GPU | pipeline | 消除 CPU→GPU 拷贝 |
-| VAE 走单次 GPU matmul | evaluate_ranking | 19 forward → 1 forward |
-| MLP 走 `u @ weight` | evaluate_ranking | 19 forward → 1 matmul |
-
-总：20s/epoch → 14s/epoch（MLP/NCF），VAE eval 112s → 6s。
+```python
+NEG_PER_POS = 30,  # data_preprocessing
+"MLP":  {"hidden_dim": 512, "lr": 1e-4, "weight_decay": 1e-3, "epochs": 50, "loss_fn": "bce", "cosine_T0": 10},
+"NCF":  {"factor_num": 256, "lr": 2e-4, "num_layers": 2, "dropout": 0.5, "weight_decay": 1e-3, "epochs": 50, "loss_fn": "bce", "cosine_T0": 10},
+```
 
 ---
 
-## evaluate_ranking 未屏蔽训练集物品（待修）
+## Valuation 函数 Bug（已修复）
 
-SPINRec 原文 `masked_fill(train_matrix.bool(), -inf)`。当前代码对全部物品排序取 top-K，训练物品天然高分占坑，Recall 被系统性压低。
+`compute_sif`、`compute_dvf_stage`、`compute_if_diag` 中使用 `loader.dataset.matrix`——变量名 `loader` 不存在，应为 `train_loader_eval.dataset.matrix`。刚修复。
 
 ---
 
@@ -135,4 +123,4 @@ SPINRec 原文 `masked_fill(train_matrix.bool(), -inf)`。当前代码对全部�
 
 ---
 
-*最后更新: 2026-07-24*
+*最后更新: 2026-07-28*
