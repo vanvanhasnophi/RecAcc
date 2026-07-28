@@ -18,6 +18,9 @@
 | 07-26 | BCE-30 负采样 | Recall: 0.02 → 0.10 |
 | 07-27 | 低 lr (1e-4) 收敛轨迹 | 归因信号仅在早期 epoch 存在 |
 | 07-28 | LOO epoch1 归因验证 | IF-diag ρ=±0.15，SIF vs IF 完美反相关 |
+| 07-28 | 三数据集 + 显式负样本 + 归因汇总 | MLP+SIF |ρ|=0.14 vs Random=0.03 (3ds×3seed) |
+| 07-28 | Yahoo 归因最强 | SIF |ρ|=0.17（显式负样本贡献最大） |
+| 07-28 | **LOO 改用 BCE loss** | |ρ| 从 0.15 跳到 0.61（4 倍） |
 
 ---
 
@@ -65,7 +68,11 @@ SPINRec 用 `Linear(num_items, hidden)`，每个物品是独立特征。Embeddin
 
 **结论**：归因只在训练早期有意义。CosineAnnealing 重启后信号也被压平。
 
-### 5. MLP > NCF 对归因器
+### 5. LOO 用 loss 比 AUC 灵敏 4 倍
+
+AUC 只测排序方向——删一个样本，30 个备份还在，方向不变 → ΔAUC≈0。BCE loss 测绝对分数偏移——每个样本的贡献直接体现在 loss 变化上。实测：`|ρ|` 从 0.15（用 AUC）跳到 0.61（用 loss）。
+
+### 6. MLP > NCF 对归因器
 
 MLP 只有 `user_fc + item_fc` 两层，梯度路径短，信号直接。NCF 的 GMF+MLP 双分支把梯度分散到 6 层 Linear + 3 层 Dropout——信号稀释 3-5 倍，ρ 相应下降。
 
